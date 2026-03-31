@@ -199,7 +199,12 @@ export default function ScheduleScreen() {
                 )}
               </TouchableOpacity>
             </View>
-            <ScheduleTimeline scheduled={scheduled} unscheduled={unscheduled} />
+            <ScheduleTimeline
+              scheduled={appliedEntries.length > 0 ? appliedEntries : scheduledEntries}
+              unscheduled={appliedEntries.length > 0
+                ? tasks.filter((t) => !t.isCompleted && !t.scheduledStart)
+                : unscheduled}
+            />
           </>
         ) : (
           <CalendarView
