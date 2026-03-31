@@ -84,7 +84,7 @@ function getAvailableSlots(
 
     for (const interval of freeIntervals) {
       const durationMs = interval.end.getTime() - interval.start.getTime();
-      if (durationMs >= 30 * 60 * 1000) {
+      if (durationMs >= 15 * 60 * 1000) {
         result.push(interval);
       }
     }
@@ -113,6 +113,60 @@ function urgencyScore(deadline: string): number {
   if (hoursLeft < 72) return 5;
   if (hoursLeft < 168) return 3;
   return 1;
+}
+
+export function findNewSlotForTask(
+  task: Task,
+  allTasks: Task[],
+  availability: WeekAvailability,
+  calendarEvents: CalendarEvent[]
+): { start: Date; end: Date } | null {
+  const now = new Date();
+  const estimatedMs = task.estimatedHours * 60 * 60 * 1000;
+  const deadline = new Date(task.deadline);
+
+  const otherIntervals: Array<{ start: Date; end: Date }> = allTasks
+    .filter((t) => t.id !== task.id && !t.isCompleted && t.scheduledStart && t.scheduledEnd)
+    .map((t) => ({ start: new Date(t.scheduledStart!), end: new Date(t.scheduledEnd!) }));
+
+  const currentStart = task.scheduledStart ? new Date(task.scheduledStart) : null;
+  const currentEnd = task.scheduledEnd ? new Date(task.scheduledEnd) : null;
+
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+
+  for (let dayOffset = 0; dayOffset < 30; dayOffset++) {
+    const day = new Date(today);
+    day.setDate(today.getDate() + dayOffset);
+    if (day > deadline) break;
+
+    const calBusy = getBusyIntervals(calendarEvents, day);
+    const blocked = [...otherIntervals, ...calBusy];
+    if (currentStart && currentEnd) {
+      blocked.push({ start: currentStart, end: currentEnd });
+    }
+
+    const freeSlots = getAvailableSlots(day, availability, calBusy, [
+      ...otherIntervals,
+      ...(currentStart && currentEnd ? [{ start: currentStart, end: currentEnd }] : []),
+    ]);
+
+    for (const slot of freeSlots) {
+      const slotMs = slot.end.getTime() - slot.start.getTime();
+      if (slotMs >= estimatedMs) {
+        const start = new Date(Math.max(slot.start.getTime(), now.getTime()));
+        const end = new Date(start.getTime() + estimatedMs);
+        if (end <= slot.end) {
+          if (currentStart && Math.abs(start.getTime() - currentStart.getTime()) < 60 * 1000) {
+            continue;
+          }
+          return { start, end };
+        }
+      }
+    }
+  }
+
+  return null;
 }
 
 export function scheduleTasks(

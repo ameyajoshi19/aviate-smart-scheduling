@@ -2,6 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
 import {
+  Alert,
   FlatList,
   Platform,
   Pressable,
@@ -19,7 +20,9 @@ import { AddTaskModal } from "@/components/AddTaskModal";
 import { RescheduleModal } from "@/components/RescheduleModal";
 import { TaskCard } from "@/components/TaskCard";
 import { Task, useApp } from "@/context/AppContext";
+import { useCalendar } from "@/context/CalendarContext";
 import { useColors } from "@/hooks/useColors";
+import { findNewSlotForTask } from "@/utils/scheduler";
 
 type PriorityFilter = "all" | "high" | "medium" | "low" | "completed";
 
@@ -45,7 +48,8 @@ function getLabelColor(label: string): string {
 export default function TasksScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { tasks, userLabels, addTask, updateTask, deleteTask, isLoading } = useApp();
+  const { tasks, userLabels, availability, addTask, updateTask, deleteTask, isLoading } = useApp();
+  const { events } = useCalendar();
   const [showAdd, setShowAdd] = useState(false);
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all");
   const [labelFilter, setLabelFilter] = useState<string | null>(null);
@@ -77,7 +81,28 @@ export default function TasksScreen() {
     await deleteTask(task.id);
   };
 
-  const handleReschedule = async (taskId: string, start: Date, end: Date) => {
+  const handleAutoReschedule = async (task: Task) => {
+    const newSlot = findNewSlotForTask(task, tasks, availability, events);
+    if (newSlot) {
+      await updateTask(task.id, {
+        scheduledStart: newSlot.start.toISOString(),
+        scheduledEnd: newSlot.end.toISOString(),
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert(
+        "Rescheduled",
+        `"${task.title}" has been moved to ${newSlot.start.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} at ${newSlot.start.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}.`
+      );
+    } else {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert(
+        "No Slot Found",
+        "No other available time slot was found before the deadline. Try updating your availability or extending the deadline."
+      );
+    }
+  };
+
+  const handleManualReschedule = async (taskId: string, start: Date, end: Date) => {
     await updateTask(taskId, {
       scheduledStart: start.toISOString(),
       scheduledEnd: end.toISOString(),
@@ -232,7 +257,7 @@ export default function TasksScreen() {
             onPress={() => {}}
             onComplete={() => handleComplete(item)}
             onDelete={() => handleDelete(item)}
-            onReschedule={() => setRescheduleTask(item)}
+            onReschedule={() => handleAutoReschedule(item)}
           />
         )}
       />
@@ -243,7 +268,7 @@ export default function TasksScreen() {
         task={rescheduleTask}
         visible={rescheduleTask !== null}
         onClose={() => setRescheduleTask(null)}
-        onReschedule={handleReschedule}
+        onReschedule={handleManualReschedule}
       />
     </View>
   );

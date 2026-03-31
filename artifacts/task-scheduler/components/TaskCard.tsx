@@ -110,15 +110,26 @@ export function TaskCard({ task, onPress, onComplete, onDelete, onReschedule, in
     );
   };
 
-  const handleSwipeLeft = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+  const handleDeleteAction = () => {
     swipeableRef.current?.close();
-    onDelete();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    Alert.alert(
+      "Delete Task",
+      `Are you sure you want to delete "${task.title}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => onDelete(),
+        },
+      ]
+    );
   };
 
-  const handleSwipeRight = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  const handleRescheduleAction = () => {
     swipeableRef.current?.close();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onReschedule();
   };
 
@@ -133,8 +144,8 @@ export function TaskCard({ task, onPress, onComplete, onDelete, onReschedule, in
         renderLeftActions={renderLeftActions}
         renderRightActions={renderRightActions}
         onSwipeableOpen={(dir) => {
-          if (dir === "right") handleSwipeRight();
-          if (dir === "left") handleSwipeLeft();
+          if (dir === "right") handleDeleteAction();
+          if (dir === "left") handleRescheduleAction();
         }}
         leftThreshold={60}
         rightThreshold={60}
