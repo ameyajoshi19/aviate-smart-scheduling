@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import {
   Alert,
   FlatList,
+  Modal,
   Platform,
   Pressable,
   RefreshControl,
@@ -54,6 +55,7 @@ export default function TasksScreen() {
   const [editTask, setEditTask] = useState<Task | null>(null);
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all");
   const [labelFilter, setLabelFilter] = useState<string | null>(null);
+  const [filterSheetVisible, setFilterSheetVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [rescheduleTask, setRescheduleTask] = useState<Task | null>(null);
 
@@ -172,70 +174,137 @@ export default function TasksScreen() {
         </View>
       </Animated.View>
 
-      {/* Priority filter */}
-      <View style={styles.filterSection}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContent}>
-          {PRIORITY_FILTERS.map((item) => (
-            <Pressable
-              key={item.key}
-              style={[
-                styles.filterChip,
-                {
-                  backgroundColor: priorityFilter === item.key ? colors.primary : colors.card,
-                  borderColor: priorityFilter === item.key ? colors.primary : colors.border,
-                },
-              ]}
-              onPress={() => {
-                Haptics.selectionAsync();
-                setPriorityFilter(item.key);
-              }}
+      {/* Filter bar */}
+      {(() => {
+        const hasFilters = priorityFilter !== "all" || labelFilter !== null;
+        const badgeCount = [priorityFilter !== "all", labelFilter !== null].filter(Boolean).length;
+        return (
+          <View style={styles.filterBar}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filterBarContent}
             >
-              <Text style={[styles.filterText, { color: priorityFilter === item.key ? colors.primaryForeground : colors.mutedForeground }]}>
-                {item.label}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-      </View>
-
-      {/* Label filter */}
-      {userLabels.length > 0 && (
-        <View style={styles.filterSection}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContent}>
-            <Pressable
-              style={[styles.labelChip, {
-                backgroundColor: labelFilter === null ? colors.primary + "20" : "transparent",
-                borderColor: labelFilter === null ? colors.primary : colors.border,
-              }]}
-              onPress={() => { Haptics.selectionAsync(); setLabelFilter(null); }}
-            >
-              <Feather name="tag" size={11} color={labelFilter === null ? colors.primary : colors.mutedForeground} />
-              <Text style={[styles.filterText, { color: labelFilter === null ? colors.primary : colors.mutedForeground }]}>
-                All Labels
-              </Text>
-            </Pressable>
-            {userLabels.map((label) => {
-              const active = labelFilter === label;
-              const lc = getLabelColor(label);
-              return (
+              {priorityFilter !== "all" && (
                 <Pressable
-                  key={label}
-                  style={[styles.labelChip, {
-                    backgroundColor: active ? lc + "22" : "transparent",
-                    borderColor: active ? lc : colors.border,
-                  }]}
-                  onPress={() => { Haptics.selectionAsync(); setLabelFilter(active ? null : label); }}
+                  style={[styles.activeChip, { backgroundColor: colors.primary + "18", borderColor: colors.primary }]}
+                  onPress={() => { Haptics.selectionAsync(); setPriorityFilter("all"); }}
                 >
-                  <View style={[styles.labelDot, { backgroundColor: lc }]} />
-                  <Text style={[styles.filterText, { color: active ? lc : colors.mutedForeground }]}>
-                    {label}
+                  <Text style={[styles.activeChipText, { color: colors.primary }]}>
+                    {PRIORITY_FILTERS.find((f) => f.key === priorityFilter)?.label}
                   </Text>
+                  <Feather name="x" size={11} color={colors.primary} />
                 </Pressable>
-              );
-            })}
-          </ScrollView>
+              )}
+              {labelFilter && (
+                <Pressable
+                  style={[styles.activeChip, { backgroundColor: getLabelColor(labelFilter) + "18", borderColor: getLabelColor(labelFilter) }]}
+                  onPress={() => { Haptics.selectionAsync(); setLabelFilter(null); }}
+                >
+                  <View style={[styles.labelDot, { backgroundColor: getLabelColor(labelFilter) }]} />
+                  <Text style={[styles.activeChipText, { color: getLabelColor(labelFilter) }]}>{labelFilter}</Text>
+                  <Feather name="x" size={11} color={getLabelColor(labelFilter)} />
+                </Pressable>
+              )}
+            </ScrollView>
+            <Pressable
+              style={[styles.filterBtn, {
+                backgroundColor: hasFilters ? colors.primary + "15" : colors.card,
+                borderColor: hasFilters ? colors.primary : colors.border,
+              }]}
+              onPress={() => { Haptics.selectionAsync(); setFilterSheetVisible(true); }}
+            >
+              <Feather name="sliders" size={15} color={hasFilters ? colors.primary : colors.mutedForeground} />
+              {hasFilters && (
+                <View style={[styles.filterBadge, { backgroundColor: colors.primary }]}>
+                  <Text style={styles.filterBadgeText}>{badgeCount}</Text>
+                </View>
+              )}
+            </Pressable>
+          </View>
+        );
+      })()}
+
+      {/* Filter sheet */}
+      <Modal
+        visible={filterSheetVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setFilterSheetVisible(false)}
+      >
+        <Pressable style={styles.sheetOverlay} onPress={() => setFilterSheetVisible(false)} />
+        <View style={[styles.sheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + 20 }]}>
+          <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+          <Text style={[styles.sheetTitle, { color: colors.foreground }]}>Filter Tasks</Text>
+
+          <Text style={[styles.sheetSection, { color: colors.mutedForeground }]}>PRIORITY</Text>
+          <View style={styles.sheetChips}>
+            {PRIORITY_FILTERS.map((item) => (
+              <Pressable
+                key={item.key}
+                style={[styles.sheetChip, {
+                  backgroundColor: priorityFilter === item.key ? colors.primary : colors.background,
+                  borderColor: priorityFilter === item.key ? colors.primary : colors.border,
+                }]}
+                onPress={() => { Haptics.selectionAsync(); setPriorityFilter(item.key); }}
+              >
+                <Text style={[styles.sheetChipText, { color: priorityFilter === item.key ? colors.primaryForeground : colors.mutedForeground }]}>
+                  {item.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {userLabels.length > 0 && (
+            <>
+              <Text style={[styles.sheetSection, { color: colors.mutedForeground }]}>LABEL</Text>
+              <View style={styles.sheetChips}>
+                <Pressable
+                  style={[styles.sheetChip, {
+                    backgroundColor: labelFilter === null ? colors.primary : colors.background,
+                    borderColor: labelFilter === null ? colors.primary : colors.border,
+                  }]}
+                  onPress={() => { Haptics.selectionAsync(); setLabelFilter(null); }}
+                >
+                  <Text style={[styles.sheetChipText, { color: labelFilter === null ? colors.primaryForeground : colors.mutedForeground }]}>All</Text>
+                </Pressable>
+                {userLabels.map((label) => {
+                  const lc = getLabelColor(label);
+                  const active = labelFilter === label;
+                  return (
+                    <Pressable
+                      key={label}
+                      style={[styles.sheetChip, {
+                        backgroundColor: active ? lc + "22" : colors.background,
+                        borderColor: active ? lc : colors.border,
+                      }]}
+                      onPress={() => { Haptics.selectionAsync(); setLabelFilter(active ? null : label); }}
+                    >
+                      <View style={[styles.labelDot, { backgroundColor: lc }]} />
+                      <Text style={[styles.sheetChipText, { color: active ? lc : colors.mutedForeground }]}>{label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </>
+          )}
+
+          <View style={styles.sheetActions}>
+            <Pressable
+              style={[styles.sheetClearBtn, { borderColor: colors.border }]}
+              onPress={() => { Haptics.selectionAsync(); setPriorityFilter("all"); setLabelFilter(null); }}
+            >
+              <Text style={[styles.sheetClearText, { color: colors.mutedForeground }]}>Clear All</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.sheetDoneBtn, { backgroundColor: colors.primary }]}
+              onPress={() => setFilterSheetVisible(false)}
+            >
+              <Text style={[styles.sheetDoneText, { color: colors.primaryForeground }]}>Done</Text>
+            </Pressable>
+          </View>
         </View>
-      )}
+      </Modal>
 
       <FlatList
         data={filtered}
@@ -329,19 +398,59 @@ const styles = StyleSheet.create({
   },
   statNum: { fontSize: 22, fontFamily: "Inter_700Bold" },
   statLabel: { fontSize: 12, fontFamily: "Inter_400Regular" },
-  filterSection: { marginBottom: 6 },
-  filterContent: { paddingHorizontal: 20, gap: 7 },
-  filterChip: {
-    paddingHorizontal: 14, paddingVertical: 7,
-    borderRadius: 20, borderWidth: 1,
+  filterBar: {
+    flexDirection: "row", alignItems: "center",
+    paddingRight: 20, marginBottom: 8, gap: 8,
   },
-  labelChip: {
+  filterBarContent: { paddingLeft: 20, gap: 7, alignItems: "center" },
+  activeChip: {
     flexDirection: "row", alignItems: "center", gap: 5,
-    paddingHorizontal: 12, paddingVertical: 7,
+    paddingHorizontal: 10, paddingVertical: 6,
     borderRadius: 20, borderWidth: 1,
   },
+  activeChipText: { fontSize: 13, fontFamily: "Inter_500Medium" },
+  filterBtn: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    paddingHorizontal: 12, paddingVertical: 8,
+    borderRadius: 20, borderWidth: 1,
+  },
+  filterBadge: {
+    width: 16, height: 16, borderRadius: 8,
+    alignItems: "center", justifyContent: "center",
+  },
+  filterBadgeText: { fontSize: 10, fontFamily: "Inter_700Bold", color: "#fff" },
   labelDot: { width: 7, height: 7, borderRadius: 4 },
-  filterText: { fontSize: 13, fontFamily: "Inter_500Medium" },
+  sheetOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)" },
+  sheet: {
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    paddingTop: 12, paddingHorizontal: 24,
+  },
+  sheetHandle: {
+    width: 36, height: 4, borderRadius: 2,
+    alignSelf: "center", marginBottom: 20,
+  },
+  sheetTitle: { fontSize: 18, fontFamily: "Inter_700Bold", marginBottom: 20 },
+  sheetSection: {
+    fontSize: 11, fontFamily: "Inter_600SemiBold",
+    letterSpacing: 0.8, marginBottom: 10,
+  },
+  sheetChips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 20 },
+  sheetChip: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: 20, borderWidth: 1,
+  },
+  sheetChipText: { fontSize: 14, fontFamily: "Inter_500Medium" },
+  sheetActions: { flexDirection: "row", gap: 12, marginTop: 4 },
+  sheetClearBtn: {
+    flex: 1, paddingVertical: 14, borderRadius: 14,
+    borderWidth: 1, alignItems: "center",
+  },
+  sheetClearText: { fontSize: 15, fontFamily: "Inter_500Medium" },
+  sheetDoneBtn: {
+    flex: 2, paddingVertical: 14, borderRadius: 14, alignItems: "center",
+  },
+  sheetDoneText: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
   listContent: { paddingHorizontal: 20, paddingTop: 6 },
   emptyState: { alignItems: "center", paddingTop: 80, gap: 12 },
   emptyTitle: { fontSize: 18, fontFamily: "Inter_600SemiBold" },
