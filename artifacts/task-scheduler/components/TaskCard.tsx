@@ -2,13 +2,14 @@ import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import React, { useRef } from "react";
 import {
+  Alert,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
   Animated as RNAnimated,
 } from "react-native";
-import { Swipeable } from "react-native-gesture-handler";
 import Animated, {
   FadeInRight,
   useAnimatedStyle,
@@ -64,10 +65,16 @@ interface TaskCardProps {
   index: number;
 }
 
-export function TaskCard({ task, onPress, onComplete, onDelete, onReschedule, index }: TaskCardProps) {
+function CardContent({
+  task,
+  onPress,
+  onComplete,
+  onDelete,
+  onReschedule,
+  isWeb,
+}: Omit<TaskCardProps, "index"> & { isWeb: boolean }) {
   const colors = useColors();
   const scale = useSharedValue(1);
-  const swipeableRef = useRef<Swipeable>(null);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -84,53 +91,16 @@ export function TaskCard({ task, onPress, onComplete, onDelete, onReschedule, in
     onComplete();
   };
 
-  const renderLeftActions = (
-    _progress: RNAnimated.AnimatedInterpolation<number>,
-    dragX: RNAnimated.AnimatedInterpolation<number>
-  ) => {
-    const scale = dragX.interpolate({ inputRange: [0, 80], outputRange: [0.7, 1], extrapolate: "clamp" });
-    return (
-      <RNAnimated.View style={[styles.rescheduleAction, { transform: [{ scale }] }]}>
-        <Feather name="clock" size={22} color="#fff" />
-        <Text style={styles.actionText}>Reschedule</Text>
-      </RNAnimated.View>
-    );
-  };
-
-  const renderRightActions = (
-    _progress: RNAnimated.AnimatedInterpolation<number>,
-    dragX: RNAnimated.AnimatedInterpolation<number>
-  ) => {
-    const scale = dragX.interpolate({ inputRange: [-80, 0], outputRange: [1, 0.7], extrapolate: "clamp" });
-    return (
-      <RNAnimated.View style={[styles.deleteAction, { transform: [{ scale }] }]}>
-        <Feather name="trash-2" size={22} color="#fff" />
-        <Text style={styles.actionText}>Delete</Text>
-      </RNAnimated.View>
-    );
-  };
-
-  const handleDeleteAction = () => {
-    swipeableRef.current?.close();
+  const handleDelete = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     Alert.alert(
       "Delete Task",
       `Are you sure you want to delete "${task.title}"?`,
       [
         { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => onDelete(),
-        },
+        { text: "Delete", style: "destructive", onPress: onDelete },
       ]
     );
-  };
-
-  const handleRescheduleAction = () => {
-    swipeableRef.current?.close();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    onReschedule();
   };
 
   const scheduledTime = formatScheduled(task.scheduledStart, task.scheduledEnd);
@@ -138,122 +108,161 @@ export function TaskCard({ task, onPress, onComplete, onDelete, onReschedule, in
   const labels = task.labels ?? [];
 
   return (
-    <Animated.View entering={FadeInRight.delay(index * 60).springify()}>
-      <Swipeable
-        ref={swipeableRef}
-        renderLeftActions={renderLeftActions}
-        renderRightActions={renderRightActions}
-        onSwipeableOpen={(dir) => {
-          if (dir === "right") handleDeleteAction();
-          if (dir === "left") handleRescheduleAction();
-        }}
-        leftThreshold={60}
-        rightThreshold={60}
-        overshootLeft={false}
-        overshootRight={false}
+    <Animated.View style={animatedStyle}>
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={onPress}
+        style={[styles.card, {
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+          opacity: task.isCompleted ? 0.55 : 1,
+        }]}
       >
-        <Animated.View style={animatedStyle}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={onPress}
-            style={[styles.card, {
-              backgroundColor: colors.card,
-              borderColor: colors.border,
-              opacity: task.isCompleted ? 0.55 : 1,
-            }]}
-          >
-            <View style={[styles.priorityBar, { backgroundColor: priorityColor }]} />
-            <View style={styles.content}>
-              <View style={styles.header}>
-                <View style={styles.titleRow}>
-                  <Text
-                    style={[styles.title, {
-                      color: colors.foreground,
-                      textDecorationLine: task.isCompleted ? "line-through" : "none",
-                    }]}
-                    numberOfLines={1}
-                  >
-                    {task.title}
-                  </Text>
-                  <TouchableOpacity onPress={handleComplete} hitSlop={8}>
-                    <View style={[styles.checkbox, {
-                      borderColor: task.isCompleted ? colors.primary : colors.border,
-                      backgroundColor: task.isCompleted ? colors.primary : "transparent",
-                    }]}>
-                      {task.isCompleted && <Feather name="check" size={12} color={colors.primaryForeground} />}
-                    </View>
-                  </TouchableOpacity>
-                </View>
-                {task.description ? (
-                  <Text style={[styles.description, { color: colors.mutedForeground }]} numberOfLines={2}>
-                    {task.description}
-                  </Text>
-                ) : null}
-              </View>
-
-              {/* Labels */}
-              {labels.length > 0 && (
-                <View style={styles.labelsRow}>
-                  {labels.map((l) => {
-                    const lc = getLabelColor(l);
-                    return (
-                      <View key={l} style={[styles.labelBadge, { backgroundColor: lc + "20", borderColor: lc + "50" }]}>
-                        <Text style={[styles.labelBadgeText, { color: lc }]}>{l}</Text>
-                      </View>
-                    );
-                  })}
-                </View>
-              )}
-
-              <View style={styles.footer}>
-                <View style={styles.metaRow}>
-                  <View style={[styles.priorityBadge, { backgroundColor: priorityColor + "22" }]}>
-                    <Text style={[styles.priorityText, { color: priorityColor }]}>
-                      {PRIORITY_LABELS[task.priority]}
-                    </Text>
-                  </View>
-                  <View style={styles.metaItem}>
-                    <Feather name="clock" size={12} color={colors.mutedForeground} />
-                    <Text style={[styles.metaText, { color: colors.mutedForeground }]}>
-                      {formatDuration(task.estimatedHours)}
-                    </Text>
-                  </View>
-                  <View style={styles.metaItem}>
-                    <Feather name="calendar" size={12} color={isOverdue ? colors.destructive : colors.mutedForeground} />
-                    <Text style={[styles.metaText, { color: isOverdue ? colors.destructive : colors.mutedForeground }]}>
-                      {formatDate(task.deadline)}
-                    </Text>
-                  </View>
-                </View>
-
-                {scheduledTime && !task.isCompleted && (
-                  <View style={[styles.scheduledBadge, { backgroundColor: colors.accent }]}>
-                    <Feather name="check-circle" size={11} color={colors.accentForeground} />
-                    <Text style={[styles.scheduledText, { color: colors.accentForeground }]}>{scheduledTime}</Text>
-                  </View>
+        <View style={[styles.priorityBar, { backgroundColor: priorityColor }]} />
+        <View style={styles.content}>
+          <View style={styles.header}>
+            <View style={styles.titleRow}>
+              <Text
+                style={[styles.title, {
+                  color: colors.foreground,
+                  textDecorationLine: task.isCompleted ? "line-through" : "none",
+                }]}
+                numberOfLines={1}
+              >
+                {task.title}
+              </Text>
+              <View style={styles.headerActions}>
+                {isWeb && !task.isCompleted && (
+                  <>
+                    <TouchableOpacity onPress={onReschedule} hitSlop={8} style={styles.webActionBtn}>
+                      <Feather name="clock" size={14} color={colors.primary} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={handleDelete} hitSlop={8} style={styles.webActionBtn}>
+                      <Feather name="trash-2" size={14} color={colors.destructive} />
+                    </TouchableOpacity>
+                  </>
                 )}
-
-                {task.googleEventId && (
-                  <View style={styles.calendarBadge}>
-                    <Feather name="calendar" size={11} color={colors.primary} />
-                    <Text style={[styles.calendarText, { color: colors.primary }]}>Added to Google Calendar</Text>
+                <TouchableOpacity onPress={handleComplete} hitSlop={8}>
+                  <View style={[styles.checkbox, {
+                    borderColor: task.isCompleted ? colors.primary : colors.border,
+                    backgroundColor: task.isCompleted ? colors.primary : "transparent",
+                  }]}>
+                    {task.isCompleted && <Feather name="check" size={12} color={colors.primaryForeground} />}
                   </View>
-                )}
+                </TouchableOpacity>
               </View>
             </View>
-          </TouchableOpacity>
-        </Animated.View>
-      </Swipeable>
+            {task.description ? (
+              <Text style={[styles.description, { color: colors.mutedForeground }]} numberOfLines={2}>
+                {task.description}
+              </Text>
+            ) : null}
+          </View>
+
+          {labels.length > 0 && (
+            <View style={styles.labelsRow}>
+              {labels.map((l) => {
+                const lc = getLabelColor(l);
+                return (
+                  <View key={l} style={[styles.labelBadge, { backgroundColor: lc + "20", borderColor: lc + "50" }]}>
+                    <Text style={[styles.labelBadgeText, { color: lc }]}>{l}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
+          <View style={styles.footer}>
+            <View style={styles.metaRow}>
+              <View style={[styles.priorityBadge, { backgroundColor: priorityColor + "22" }]}>
+                <Text style={[styles.priorityText, { color: priorityColor }]}>
+                  {PRIORITY_LABELS[task.priority]}
+                </Text>
+              </View>
+              <View style={styles.metaItem}>
+                <Feather name="clock" size={12} color={colors.mutedForeground} />
+                <Text style={[styles.metaText, { color: colors.mutedForeground }]}>
+                  {formatDuration(task.estimatedHours)}
+                </Text>
+              </View>
+              <View style={styles.metaItem}>
+                <Feather name="calendar" size={12} color={isOverdue ? colors.destructive : colors.mutedForeground} />
+                <Text style={[styles.metaText, { color: isOverdue ? colors.destructive : colors.mutedForeground }]}>
+                  {formatDate(task.deadline)}
+                </Text>
+              </View>
+            </View>
+
+            {scheduledTime && !task.isCompleted && (
+              <View style={[styles.scheduledBadge, { backgroundColor: colors.accent }]}>
+                <Feather name="check-circle" size={11} color={colors.accentForeground} />
+                <Text style={[styles.scheduledText, { color: colors.accentForeground }]}>{scheduledTime}</Text>
+              </View>
+            )}
+
+            {task.googleEventId && (
+              <View style={styles.calendarBadge}>
+                <Feather name="calendar" size={11} color={colors.primary} />
+                <Text style={[styles.calendarText, { color: colors.primary }]}>Added to Google Calendar</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </TouchableOpacity>
     </Animated.View>
   );
 }
 
+export function TaskCard({ task, onPress, onComplete, onDelete, onReschedule, index }: TaskCardProps) {
+  const isWeb = Platform.OS === "web";
+
+  const handleDeleteWithConfirm = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    Alert.alert(
+      "Delete Task",
+      `Are you sure you want to delete "${task.title}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: onDelete },
+      ]
+    );
+  };
+
+  if (isWeb) {
+    return (
+      <Animated.View entering={FadeInRight.delay(index * 60).springify()} style={styles.wrapper}>
+        <CardContent
+          task={task}
+          onPress={onPress}
+          onComplete={onComplete}
+          onDelete={handleDeleteWithConfirm}
+          onReschedule={onReschedule}
+          isWeb
+        />
+      </Animated.View>
+    );
+  }
+
+  // Native only: lazy-load Swipeable to avoid web crash
+  const SwipeableCard = require("./SwipeableCard").SwipeableCard;
+  return (
+    <SwipeableCard
+      task={task}
+      onPress={onPress}
+      onComplete={onComplete}
+      onDelete={handleDeleteWithConfirm}
+      onReschedule={onReschedule}
+      index={index}
+    />
+  );
+}
+
 const styles = StyleSheet.create({
+  wrapper: { marginBottom: 12 },
   card: {
     flexDirection: "row",
     borderRadius: 16,
     borderWidth: 1,
-    marginBottom: 12,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -266,16 +275,15 @@ const styles = StyleSheet.create({
   header: { gap: 4 },
   titleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
   title: { fontSize: 16, fontFamily: "Inter_600SemiBold", flex: 1 },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
+  webActionBtn: { padding: 2 },
   checkbox: {
     width: 22, height: 22, borderRadius: 11,
     borderWidth: 2, alignItems: "center", justifyContent: "center",
   },
   description: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
   labelsRow: { flexDirection: "row", flexWrap: "wrap", gap: 5 },
-  labelBadge: {
-    paddingHorizontal: 7, paddingVertical: 2,
-    borderRadius: 20, borderWidth: 1,
-  },
+  labelBadge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 20, borderWidth: 1 },
   labelBadgeText: { fontSize: 11, fontFamily: "Inter_500Medium" },
   footer: { gap: 6 },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" },
@@ -290,23 +298,4 @@ const styles = StyleSheet.create({
   scheduledText: { fontSize: 11, fontFamily: "Inter_500Medium" },
   calendarBadge: { flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "flex-start" },
   calendarText: { fontSize: 11, fontFamily: "Inter_400Regular" },
-  rescheduleAction: {
-    backgroundColor: "#6366f1",
-    justifyContent: "center",
-    alignItems: "center",
-    width: 90,
-    marginBottom: 12,
-    borderRadius: 16,
-    gap: 4,
-  },
-  deleteAction: {
-    backgroundColor: "#ef4444",
-    justifyContent: "center",
-    alignItems: "center",
-    width: 90,
-    marginBottom: 12,
-    borderRadius: 16,
-    gap: 4,
-  },
-  actionText: { color: "#fff", fontSize: 11, fontFamily: "Inter_600SemiBold" },
 });
