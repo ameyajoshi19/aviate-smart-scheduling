@@ -224,8 +224,9 @@ export function AvailabilityEditor({ availability, onChange }: AvailabilityEdito
                   Haptics.selectionAsync();
                   updateDay(day, { enabled: v });
                 }}
-                trackColor={{ false: colors.border, true: colors.primary + "88" }}
-                thumbColor={avail.enabled ? colors.primary : colors.mutedForeground}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor={Platform.OS === "android" ? (avail.enabled ? "#fff" : colors.mutedForeground) : undefined}
+                ios_backgroundColor={colors.border}
               />
             </View>
 

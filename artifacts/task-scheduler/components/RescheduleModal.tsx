@@ -14,6 +14,7 @@ import {
 
 import { Task } from "../context/AppContext";
 import { useColors } from "../hooks/useColors";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface RescheduleModalProps {
   task: Task | null;
@@ -34,6 +35,7 @@ function formatHour(h: number, m: number) {
 
 export function RescheduleModal({ task, visible, onClose, onReschedule }: RescheduleModalProps) {
   const colors = useColors();
+  const insets = useSafeAreaInsets();
   const [date, setDate] = useState(new Date());
   const [startHour, setStartHour] = useState(9);
   const [startMinute, setStartMinute] = useState(0);
@@ -63,7 +65,7 @@ export function RescheduleModal({ task, visible, onClose, onReschedule }: Resche
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose} transparent={false}>
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: Math.max(insets.top, Platform.OS === "android" ? 40 : 20) }]}>
           <TouchableOpacity onPress={onClose}>
             <Text style={[styles.cancelText, { color: colors.mutedForeground }]}>Cancel</Text>
           </TouchableOpacity>
@@ -89,23 +91,39 @@ export function RescheduleModal({ task, visible, onClose, onReschedule }: Resche
           {/* Date */}
           <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>NEW DATE</Text>
-            <TouchableOpacity style={styles.dateBtn} onPress={() => setShowDatePicker(true)}>
-              <Feather name="calendar" size={18} color={colors.primary} />
-              <Text style={[styles.dateBtnText, { color: colors.foreground }]}>
-                {date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
-              </Text>
-              <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
-            </TouchableOpacity>
-            {showDatePicker && (
-              <DateTimePicker
-                value={date}
-                mode="date"
-                minimumDate={new Date()}
-                onChange={(_, d) => {
-                  setShowDatePicker(Platform.OS === "ios");
-                  if (d) setDate(d);
-                }}
-              />
+            {Platform.OS === "ios" ? (
+              <View style={styles.dateBtn}>
+                <Feather name="calendar" size={18} color={colors.primary} />
+                <DateTimePicker
+                  value={date}
+                  mode="date"
+                  display="compact"
+                  minimumDate={new Date()}
+                  onChange={(_, d) => { if (d) setDate(d); }}
+                  style={{ flex: 1 }}
+                />
+              </View>
+            ) : (
+              <>
+                <TouchableOpacity style={styles.dateBtn} onPress={() => setShowDatePicker(true)}>
+                  <Feather name="calendar" size={18} color={colors.primary} />
+                  <Text style={[styles.dateBtnText, { color: colors.foreground }]}>
+                    {date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                  </Text>
+                  <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+                </TouchableOpacity>
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={date}
+                    mode="date"
+                    minimumDate={new Date()}
+                    onChange={(_, d) => {
+                      setShowDatePicker(false);
+                      if (d) setDate(d);
+                    }}
+                  />
+                )}
+              </>
             )}
           </View>
 
@@ -181,8 +199,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1,
-    paddingTop: Platform.OS === "android" ? 40 : 16,
+    paddingHorizontal: 20, paddingBottom: 16, borderBottomWidth: 1,
   },
   headerTitle: { fontSize: 17, fontFamily: "Inter_600SemiBold" },
   cancelText: { fontSize: 16, fontFamily: "Inter_400Regular" },

@@ -18,6 +18,7 @@ import {
 
 import { Priority, Task, useApp } from "../context/AppContext";
 import { useColors } from "../hooks/useColors";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type TaskFields = {
   title: string;
@@ -69,6 +70,7 @@ function getLabelColor(label: string): string {
 
 export function AddTaskModal({ visible, onClose, onAdd, editTask, onEdit }: AddTaskModalProps) {
   const colors = useColors();
+  const insets = useSafeAreaInsets();
   const { userLabels, addUserLabel } = useApp();
   const isEditing = !!editTask;
 
@@ -173,7 +175,7 @@ export function AddTaskModal({ visible, onClose, onAdd, editTask, onEdit }: AddT
         style={[styles.container, { backgroundColor: colors.background }]}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: Math.max(insets.top, Platform.OS === "android" ? 40 : 20) }]}>
           <TouchableOpacity onPress={handleClose}>
             <Text style={[styles.cancelText, { color: colors.mutedForeground }]}>Cancel</Text>
           </TouchableOpacity>
@@ -298,32 +300,44 @@ export function AddTaskModal({ visible, onClose, onAdd, editTask, onEdit }: AddT
           </View>
 
           {/* Deadline */}
-          <TouchableOpacity
-            style={[styles.field, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => setShowDatePicker(true)}
-          >
+          <View style={[styles.field, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>DEADLINE</Text>
-            <View style={styles.dateRow}>
-              <Feather name="calendar" size={16} color={colors.primary} />
-              <Text style={[styles.dateText, { color: colors.foreground }]}>
-                {deadline.toLocaleDateString("en-US", {
-                  weekday: "long", month: "long", day: "numeric", year: "numeric",
-                })}
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          {showDatePicker && (
-            <DateTimePicker
-              value={deadline}
-              mode="date"
-              minimumDate={new Date()}
-              onChange={(_, date) => {
-                setShowDatePicker(Platform.OS === "ios");
-                if (date) setDeadline(date);
-              }}
-            />
-          )}
+            {Platform.OS === "ios" ? (
+              <View style={styles.dateRow}>
+                <Feather name="calendar" size={16} color={colors.primary} />
+                <DateTimePicker
+                  value={deadline}
+                  mode="date"
+                  display="compact"
+                  minimumDate={new Date()}
+                  onChange={(_, date) => { if (date) setDeadline(date); }}
+                  style={{ flex: 1 }}
+                />
+              </View>
+            ) : (
+              <>
+                <TouchableOpacity style={styles.dateRow} onPress={() => setShowDatePicker(true)}>
+                  <Feather name="calendar" size={16} color={colors.primary} />
+                  <Text style={[styles.dateText, { color: colors.foreground }]}>
+                    {deadline.toLocaleDateString("en-US", {
+                      weekday: "long", month: "long", day: "numeric", year: "numeric",
+                    })}
+                  </Text>
+                </TouchableOpacity>
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={deadline}
+                    mode="date"
+                    minimumDate={new Date()}
+                    onChange={(_, date) => {
+                      setShowDatePicker(false);
+                      if (date) setDeadline(date);
+                    }}
+                  />
+                )}
+              </>
+            )}
+          </View>
 
           {/* Duration */}
           <View style={[styles.field, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -375,9 +389,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingBottom: 16,
     borderBottomWidth: 1,
-    paddingTop: Platform.OS === "android" ? 40 : 16,
   },
   headerTitle: { fontSize: 17, fontFamily: "Inter_600SemiBold" },
   cancelText: { fontSize: 16, fontFamily: "Inter_400Regular" },
