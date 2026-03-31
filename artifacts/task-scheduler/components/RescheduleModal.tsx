@@ -91,7 +91,30 @@ export function RescheduleModal({ task, visible, onClose, onReschedule }: Resche
           {/* Date */}
           <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>NEW DATE</Text>
-            {Platform.OS === "ios" ? (
+            {Platform.OS === "web" ? (
+              <View style={styles.dateBtn}>
+                <Feather name="calendar" size={18} color={colors.primary} />
+                {/* @ts-ignore – native HTML input works fine on web via React Native Web */}
+                <input
+                  type="date"
+                  min={new Date().toISOString().split("T")[0]}
+                  value={date.toISOString().split("T")[0]}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    if (e.target.value) setDate(new Date(e.target.value + "T12:00:00"));
+                  }}
+                  style={{
+                    flex: 1,
+                    border: "none",
+                    outline: "none",
+                    background: "transparent",
+                    fontSize: 15,
+                    fontFamily: "Inter_400Regular",
+                    color: colors.foreground,
+                    cursor: "pointer",
+                  }}
+                />
+              </View>
+            ) : Platform.OS === "ios" ? (
               <View style={styles.dateBtn}>
                 <Feather name="calendar" size={18} color={colors.primary} />
                 <DateTimePicker

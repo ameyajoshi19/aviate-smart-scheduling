@@ -302,7 +302,30 @@ export function AddTaskModal({ visible, onClose, onAdd, editTask, onEdit }: AddT
           {/* Deadline */}
           <View style={[styles.field, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>DEADLINE</Text>
-            {Platform.OS === "ios" ? (
+            {Platform.OS === "web" ? (
+              <View style={styles.dateRow}>
+                <Feather name="calendar" size={16} color={colors.primary} />
+                {/* @ts-ignore – HTML input works via React Native Web */}
+                <input
+                  type="date"
+                  min={new Date().toISOString().split("T")[0]}
+                  value={deadline.toISOString().split("T")[0]}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    if (e.target.value) setDeadline(new Date(e.target.value + "T12:00:00"));
+                  }}
+                  style={{
+                    flex: 1,
+                    border: "none",
+                    outline: "none",
+                    background: "transparent",
+                    fontSize: 15,
+                    fontFamily: "Inter_400Regular",
+                    color: colors.foreground,
+                    cursor: "pointer",
+                  }}
+                />
+              </View>
+            ) : Platform.OS === "ios" ? (
               <View style={styles.dateRow}>
                 <Feather name="calendar" size={16} color={colors.primary} />
                 <DateTimePicker
