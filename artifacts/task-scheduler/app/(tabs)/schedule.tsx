@@ -51,7 +51,9 @@ export default function ScheduleScreen() {
   const unscheduled = tasks.filter((t) => !t.isCompleted && !scheduledIds.has(t.id));
 
   const scheduledEntries = useMemo(() =>
-    scheduled.map((s) => ({ task: s.task, start: s.start, end: s.end })),
+    scheduled
+      .map((s) => ({ task: s.task, start: s.start, end: s.end }))
+      .sort((a, b) => a.start.getTime() - b.start.getTime()),
     [scheduled]
   );
 
@@ -60,11 +62,13 @@ export default function ScheduleScreen() {
     [tasks]
   );
   const appliedEntries = useMemo(() =>
-    appliedTasks.map((t) => ({
-      task: t,
-      start: new Date(t.scheduledStart!),
-      end: new Date(t.scheduledEnd!),
-    })),
+    appliedTasks
+      .map((t) => ({
+        task: t,
+        start: new Date(t.scheduledStart!),
+        end: new Date(t.scheduledEnd!),
+      }))
+      .sort((a, b) => a.start.getTime() - b.start.getTime()),
     [appliedTasks]
   );
 
