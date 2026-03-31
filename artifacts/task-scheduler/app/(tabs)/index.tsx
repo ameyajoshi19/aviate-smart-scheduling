@@ -22,7 +22,7 @@ import { TaskCard } from "@/components/TaskCard";
 import { Task, useApp } from "@/context/AppContext";
 import { useCalendar } from "@/context/CalendarContext";
 import { useColors } from "@/hooks/useColors";
-import { findNewSlotForTask } from "@/utils/scheduler";
+import { findNewSlotForTask, scheduleTasks } from "@/utils/scheduler";
 
 type PriorityFilter = "all" | "high" | "medium" | "low" | "completed";
 
@@ -72,6 +72,18 @@ export default function TasksScreen() {
   const handleRefresh = async () => {
     setRefreshing(true);
     setTimeout(() => setRefreshing(false), 600);
+  };
+
+  const handleAddTask = async (taskData: Omit<Task, "id" | "createdAt">) => {
+    const tempId = "__new_task__";
+    const tempTask: Task = { ...taskData, id: tempId, createdAt: new Date().toISOString() };
+    const proposal = scheduleTasks([...tasks, tempTask], availability, events);
+    const slot = proposal.find((s) => s.task.id === tempId);
+    await addTask({
+      ...taskData,
+      scheduledStart: slot?.start.toISOString(),
+      scheduledEnd: slot?.end.toISOString(),
+    });
   };
 
   const handleComplete = async (task: Task) => {
@@ -266,7 +278,7 @@ export default function TasksScreen() {
         )}
       />
 
-      <AddTaskModal visible={showAdd} onClose={() => setShowAdd(false)} onAdd={addTask} />
+      <AddTaskModal visible={showAdd} onClose={() => setShowAdd(false)} onAdd={handleAddTask} />
 
       <AddTaskModal
         visible={editTask !== null}
