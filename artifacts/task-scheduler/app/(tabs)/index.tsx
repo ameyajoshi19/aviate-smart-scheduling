@@ -6,6 +6,7 @@ import {
   Platform,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -15,13 +16,14 @@ import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AddTaskModal } from "@/components/AddTaskModal";
+import { RescheduleModal } from "@/components/RescheduleModal";
 import { TaskCard } from "@/components/TaskCard";
 import { Task, useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 
-type FilterOption = "all" | "high" | "medium" | "low" | "completed";
+type PriorityFilter = "all" | "high" | "medium" | "low" | "completed";
 
-const FILTER_OPTIONS: { key: FilterOption; label: string }[] = [
+const PRIORITY_FILTERS: { key: PriorityFilter; label: string }[] = [
   { key: "all", label: "All" },
   { key: "high", label: "High" },
   { key: "medium", label: "Medium" },
@@ -29,18 +31,33 @@ const FILTER_OPTIONS: { key: FilterOption; label: string }[] = [
   { key: "completed", label: "Done" },
 ];
 
+const LABEL_COLORS = [
+  "#6366f1", "#8b5cf6", "#ec4899", "#f97316",
+  "#14b8a6", "#10b981", "#3b82f6", "#f59e0b",
+];
+
+function getLabelColor(label: string): string {
+  let hash = 0;
+  for (let i = 0; i < label.length; i++) hash = label.charCodeAt(i) + ((hash << 5) - hash);
+  return LABEL_COLORS[Math.abs(hash) % LABEL_COLORS.length];
+}
+
 export default function TasksScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { tasks, addTask, updateTask, isLoading } = useApp();
+  const { tasks, userLabels, addTask, updateTask, deleteTask, isLoading } = useApp();
   const [showAdd, setShowAdd] = useState(false);
-  const [filter, setFilter] = useState<FilterOption>("all");
+  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all");
+  const [labelFilter, setLabelFilter] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [rescheduleTask, setRescheduleTask] = useState<Task | null>(null);
 
   const filtered = tasks.filter((t) => {
-    if (filter === "all") return !t.isCompleted;
-    if (filter === "completed") return t.isCompleted;
-    return !t.isCompleted && t.priority === filter;
+    if (priorityFilter === "completed") return t.isCompleted;
+    if (priorityFilter !== "all" && t.priority !== priorityFilter) return false;
+    if (t.isCompleted && priorityFilter !== "completed") return false;
+    if (labelFilter && !(t.labels ?? []).includes(labelFilter)) return false;
+    return true;
   });
 
   const overduePending = tasks.filter(
@@ -56,14 +73,23 @@ export default function TasksScreen() {
     await updateTask(task.id, { isCompleted: !task.isCompleted });
   };
 
+  const handleDelete = async (task: Task) => {
+    await deleteTask(task.id);
+  };
+
+  const handleReschedule = async (taskId: string, start: Date, end: Date) => {
+    await updateTask(taskId, {
+      scheduledStart: start.toISOString(),
+      scheduledEnd: end.toISOString(),
+    });
+    setRescheduleTask(null);
+  };
+
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Animated.View
-        entering={FadeInDown.duration(400)}
-        style={[styles.header, { paddingTop: topPad + 16 }]}
-      >
+      <Animated.View entering={FadeInDown.duration(400)} style={[styles.header, { paddingTop: topPad + 16 }]}>
         <View>
           <Text style={[styles.greeting, { color: colors.mutedForeground }]}>
             {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
@@ -72,13 +98,10 @@ export default function TasksScreen() {
           {overduePending > 0 && (
             <View style={[styles.overdueBadge, { backgroundColor: colors.destructive + "22" }]}>
               <Feather name="alert-circle" size={12} color={colors.destructive} />
-              <Text style={[styles.overdueText, { color: colors.destructive }]}>
-                {overduePending} overdue
-              </Text>
+              <Text style={[styles.overdueText, { color: colors.destructive }]}>{overduePending} overdue</Text>
             </View>
           )}
         </View>
-
         <TouchableOpacity
           style={[styles.addBtn, { backgroundColor: colors.primary }]}
           onPress={() => {
@@ -111,39 +134,70 @@ export default function TasksScreen() {
         </View>
       </Animated.View>
 
-      <View style={styles.filterScroll}>
-        <FlatList
-          horizontal
-          data={FILTER_OPTIONS}
-          keyExtractor={(item) => item.key}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterContent}
-          renderItem={({ item }) => (
+      {/* Priority filter */}
+      <View style={styles.filterSection}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContent}>
+          {PRIORITY_FILTERS.map((item) => (
             <Pressable
+              key={item.key}
               style={[
                 styles.filterChip,
                 {
-                  backgroundColor: filter === item.key ? colors.primary : colors.card,
-                  borderColor: filter === item.key ? colors.primary : colors.border,
+                  backgroundColor: priorityFilter === item.key ? colors.primary : colors.card,
+                  borderColor: priorityFilter === item.key ? colors.primary : colors.border,
                 },
               ]}
               onPress={() => {
                 Haptics.selectionAsync();
-                setFilter(item.key);
+                setPriorityFilter(item.key);
               }}
             >
-              <Text
-                style={[
-                  styles.filterText,
-                  { color: filter === item.key ? colors.primaryForeground : colors.mutedForeground },
-                ]}
-              >
+              <Text style={[styles.filterText, { color: priorityFilter === item.key ? colors.primaryForeground : colors.mutedForeground }]}>
                 {item.label}
               </Text>
             </Pressable>
-          )}
-        />
+          ))}
+        </ScrollView>
       </View>
+
+      {/* Label filter */}
+      {userLabels.length > 0 && (
+        <View style={styles.filterSection}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContent}>
+            <Pressable
+              style={[styles.labelChip, {
+                backgroundColor: labelFilter === null ? colors.primary + "20" : "transparent",
+                borderColor: labelFilter === null ? colors.primary : colors.border,
+              }]}
+              onPress={() => { Haptics.selectionAsync(); setLabelFilter(null); }}
+            >
+              <Feather name="tag" size={11} color={labelFilter === null ? colors.primary : colors.mutedForeground} />
+              <Text style={[styles.filterText, { color: labelFilter === null ? colors.primary : colors.mutedForeground }]}>
+                All Labels
+              </Text>
+            </Pressable>
+            {userLabels.map((label) => {
+              const active = labelFilter === label;
+              const lc = getLabelColor(label);
+              return (
+                <Pressable
+                  key={label}
+                  style={[styles.labelChip, {
+                    backgroundColor: active ? lc + "22" : "transparent",
+                    borderColor: active ? lc : colors.border,
+                  }]}
+                  onPress={() => { Haptics.selectionAsync(); setLabelFilter(active ? null : label); }}
+                >
+                  <View style={[styles.labelDot, { backgroundColor: lc }]} />
+                  <Text style={[styles.filterText, { color: active ? lc : colors.mutedForeground }]}>
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
 
       <FlatList
         data={filtered}
@@ -154,21 +208,19 @@ export default function TasksScreen() {
         ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.primary}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Feather name="check-square" size={40} color={colors.mutedForeground} />
             <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
-              {filter === "completed" ? "No completed tasks" : "No tasks yet"}
+              {priorityFilter === "completed" ? "No completed tasks" : labelFilter ? `No tasks with "${labelFilter}"` : "No tasks yet"}
             </Text>
             <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              {filter === "completed"
+              {priorityFilter === "completed"
                 ? "Complete tasks to see them here"
+                : labelFilter
+                ? "Try a different label filter"
                 : "Tap the + button to add your first task"}
             </Text>
           </View>
@@ -179,123 +231,70 @@ export default function TasksScreen() {
             index={index}
             onPress={() => {}}
             onComplete={() => handleComplete(item)}
+            onDelete={() => handleDelete(item)}
+            onReschedule={() => setRescheduleTask(item)}
           />
         )}
       />
 
-      <AddTaskModal
-        visible={showAdd}
-        onClose={() => setShowAdd(false)}
-        onAdd={addTask}
+      <AddTaskModal visible={showAdd} onClose={() => setShowAdd(false)} onAdd={addTask} />
+
+      <RescheduleModal
+        task={rescheduleTask}
+        visible={rescheduleTask !== null}
+        onClose={() => setRescheduleTask(null)}
+        onReschedule={handleReschedule}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingBottom: 16,
+    flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between",
+    paddingHorizontal: 20, paddingBottom: 16,
   },
-  greeting: {
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-    marginBottom: 2,
-  },
-  title: {
-    fontSize: 32,
-    fontFamily: "Inter_700Bold",
-    lineHeight: 36,
-  },
+  greeting: { fontSize: 13, fontFamily: "Inter_400Regular", marginBottom: 2 },
+  title: { fontSize: 32, fontFamily: "Inter_700Bold", lineHeight: 36 },
   overdueBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 20,
-    marginTop: 6,
-    alignSelf: "flex-start",
+    flexDirection: "row", alignItems: "center", gap: 4,
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20,
+    marginTop: 6, alignSelf: "flex-start",
   },
-  overdueText: {
-    fontSize: 12,
-    fontFamily: "Inter_500Medium",
-  },
+  overdueText: { fontSize: 12, fontFamily: "Inter_500Medium" },
   addBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 8,
-    shadowColor: "#6366f1",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    width: 44, height: 44, borderRadius: 22,
+    alignItems: "center", justifyContent: "center",
+    marginTop: 8, shadowColor: "#6366f1",
+    shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3,
+    shadowRadius: 8, elevation: 6,
   },
-  statsRow: {
-    flexDirection: "row",
-    paddingHorizontal: 20,
-    gap: 10,
-    marginBottom: 12,
-  },
+  statsRow: { flexDirection: "row", paddingHorizontal: 20, gap: 10, marginBottom: 10 },
   statCard: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    alignItems: "center",
-    gap: 2,
+    flex: 1, padding: 14, borderRadius: 14,
+    borderWidth: 1, alignItems: "center", gap: 2,
   },
-  statNum: {
-    fontSize: 22,
-    fontFamily: "Inter_700Bold",
-  },
-  statLabel: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-  },
-  filterScroll: {
-    marginBottom: 8,
-  },
-  filterContent: {
-    paddingHorizontal: 20,
-    gap: 8,
-  },
+  statNum: { fontSize: 22, fontFamily: "Inter_700Bold" },
+  statLabel: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  filterSection: { marginBottom: 6 },
+  filterContent: { paddingHorizontal: 20, gap: 7 },
   filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    borderWidth: 1,
+    paddingHorizontal: 14, paddingVertical: 7,
+    borderRadius: 20, borderWidth: 1,
   },
-  filterText: {
-    fontSize: 13,
-    fontFamily: "Inter_500Medium",
+  labelChip: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    paddingHorizontal: 12, paddingVertical: 7,
+    borderRadius: 20, borderWidth: 1,
   },
-  listContent: {
-    paddingHorizontal: 20,
-    paddingTop: 4,
-  },
-  emptyState: {
-    alignItems: "center",
-    paddingTop: 80,
-    gap: 12,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontFamily: "Inter_600SemiBold",
-  },
+  labelDot: { width: 7, height: 7, borderRadius: 4 },
+  filterText: { fontSize: 13, fontFamily: "Inter_500Medium" },
+  listContent: { paddingHorizontal: 20, paddingTop: 6 },
+  emptyState: { alignItems: "center", paddingTop: 80, gap: 12 },
+  emptyTitle: { fontSize: 18, fontFamily: "Inter_600SemiBold" },
   emptyText: {
-    fontSize: 14,
-    fontFamily: "Inter_400Regular",
-    textAlign: "center",
-    maxWidth: 240,
+    fontSize: 14, fontFamily: "Inter_400Regular",
+    textAlign: "center", maxWidth: 240,
   },
 });

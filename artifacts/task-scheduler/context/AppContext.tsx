@@ -16,6 +16,7 @@ export interface Task {
   priority: Priority;
   deadline: string;
   estimatedHours: number;
+  labels: string[];
   isCompleted: boolean;
   scheduledStart?: string;
   scheduledEnd?: string;
@@ -55,16 +56,22 @@ const DEFAULT_AVAILABILITY: WeekAvailability = {
   sunday: { enabled: false, slots: [{ startHour: 10, endHour: 13 }] },
 };
 
+const DEFAULT_LABELS = ["Work", "Personal", "Study", "Health", "Errands"];
+
 const TASKS_KEY = "@tasks";
 const AVAILABILITY_KEY = "@availability";
+const LABELS_KEY = "@user_labels";
 
 interface AppContextValue {
   tasks: Task[];
   availability: WeekAvailability;
+  userLabels: string[];
   addTask: (task: Omit<Task, "id" | "createdAt">) => Promise<void>;
   updateTask: (id: string, updates: Partial<Task>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
   saveAvailability: (avail: WeekAvailability) => Promise<void>;
+  addUserLabel: (label: string) => Promise<void>;
+  removeUserLabel: (label: string) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -73,6 +80,7 @@ const AppContext = createContext<AppContextValue | null>(null);
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [availability, setAvailability] = useState<WeekAvailability>(DEFAULT_AVAILABILITY);
+  const [userLabels, setUserLabels] = useState<string[]>(DEFAULT_LABELS);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -81,12 +89,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const loadData = async () => {
     try {
-      const [tasksRaw, availRaw] = await Promise.all([
+      const [tasksRaw, availRaw, labelsRaw] = await Promise.all([
         AsyncStorage.getItem(TASKS_KEY),
         AsyncStorage.getItem(AVAILABILITY_KEY),
+        AsyncStorage.getItem(LABELS_KEY),
       ]);
       if (tasksRaw) setTasks(JSON.parse(tasksRaw));
       if (availRaw) setAvailability(JSON.parse(availRaw));
+      if (labelsRaw) setUserLabels(JSON.parse(labelsRaw));
     } catch (e) {
     } finally {
       setIsLoading(false);
@@ -121,8 +131,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem(AVAILABILITY_KEY, JSON.stringify(avail));
   }, []);
 
+  const addUserLabel = useCallback(async (label: string) => {
+    const trimmed = label.trim();
+    if (!trimmed || userLabels.includes(trimmed)) return;
+    const updated = [...userLabels, trimmed];
+    setUserLabels(updated);
+    await AsyncStorage.setItem(LABELS_KEY, JSON.stringify(updated));
+  }, [userLabels]);
+
+  const removeUserLabel = useCallback(async (label: string) => {
+    const updated = userLabels.filter((l) => l !== label);
+    setUserLabels(updated);
+    await AsyncStorage.setItem(LABELS_KEY, JSON.stringify(updated));
+  }, [userLabels]);
+
   return (
-    <AppContext.Provider value={{ tasks, availability, addTask, updateTask, deleteTask, saveAvailability, isLoading }}>
+    <AppContext.Provider value={{
+      tasks, availability, userLabels,
+      addTask, updateTask, deleteTask,
+      saveAvailability, addUserLabel, removeUserLabel,
+      isLoading,
+    }}>
       {children}
     </AppContext.Provider>
   );
