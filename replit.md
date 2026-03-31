@@ -94,3 +94,18 @@ Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHea
 ### `scripts` (`@workspace/scripts`)
 
 Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+
+### `artifacts/task-scheduler` (`@workspace/task-scheduler`)
+
+Expo mobile app — Smart Task Scheduler. Features:
+- Task creation with priority (high/medium/low), deadline, estimated hours
+- Weekly availability editor (per-day time slots)
+- Smart scheduling algorithm that sorts by priority + urgency, avoids calendar conflicts
+- Google Calendar integration (read events to avoid conflicts, create task events with reminders)
+- 4 tabs: Tasks, Schedule, Availability, Settings
+
+**Google Calendar integration note:** The user dismissed the Replit Google Calendar OAuth integration flow. The app's Settings tab has a "Connect Google Calendar" button. To wire up real Google Calendar access, either:
+1. Have the user complete the Replit Google Calendar integration (connector ID: `connector:ccfg_google-calendar_DDDBAC03DE404369B74F32E78D`), then wire the OAuth token into the mobile app
+2. Or store a Google OAuth client ID/secret as Replit secrets and implement a proper OAuth flow within the app
+
+The API server (`/api/calendar/*`) already has all Google Calendar proxy routes built and ready.
