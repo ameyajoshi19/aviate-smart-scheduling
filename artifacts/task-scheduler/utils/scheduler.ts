@@ -1,0 +1,170 @@
+import { CalendarEvent } from "../context/CalendarContext";
+import { Task, WeekAvailability, DayKey } from "../context/AppContext";
+
+const DAY_KEYS: DayKey[] = [
+  "sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"
+];
+
+interface ScheduledTask {
+  task: Task;
+  start: Date;
+  end: Date;
+}
+
+function isTimeOverlap(
+  aStart: Date,
+  aEnd: Date,
+  bStart: Date,
+  bEnd: Date
+): boolean {
+  return aStart < bEnd && aEnd > bStart;
+}
+
+function getBusyIntervals(
+  calendarEvents: CalendarEvent[],
+  day: Date
+): Array<{ start: Date; end: Date }> {
+  const intervals: Array<{ start: Date; end: Date }> = [];
+  const dayStart = new Date(day);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(day);
+  dayEnd.setHours(23, 59, 59, 999);
+
+  for (const event of calendarEvents) {
+    if (!event.start || !event.end || event.isAllDay) continue;
+    const s = new Date(event.start);
+    const e = new Date(event.end);
+    if (isTimeOverlap(s, e, dayStart, dayEnd)) {
+      intervals.push({ start: s, end: e });
+    }
+  }
+  return intervals;
+}
+
+function getAvailableSlots(
+  day: Date,
+  availability: WeekAvailability,
+  calendarBusy: Array<{ start: Date; end: Date }>,
+  alreadyScheduled: Array<{ start: Date; end: Date }>
+): Array<{ start: Date; end: Date }> {
+  const dayKey = DAY_KEYS[day.getDay()];
+  const dayAvailability = availability[dayKey];
+  if (!dayAvailability.enabled) return [];
+
+  const result: Array<{ start: Date; end: Date }> = [];
+
+  for (const slot of dayAvailability.slots) {
+    const slotStart = new Date(day);
+    slotStart.setHours(slot.startHour, 0, 0, 0);
+    const slotEnd = new Date(day);
+    slotEnd.setHours(slot.endHour, 0, 0, 0);
+
+    let freeIntervals: Array<{ start: Date; end: Date }> = [
+      { start: slotStart, end: slotEnd },
+    ];
+
+    const blocked = [...calendarBusy, ...alreadyScheduled];
+
+    for (const busy of blocked) {
+      const newFree: Array<{ start: Date; end: Date }> = [];
+      for (const free of freeIntervals) {
+        if (!isTimeOverlap(busy.start, busy.end, free.start, free.end)) {
+          newFree.push(free);
+        } else {
+          if (busy.start > free.start) {
+            newFree.push({ start: free.start, end: busy.start });
+          }
+          if (busy.end < free.end) {
+            newFree.push({ start: busy.end, end: free.end });
+          }
+        }
+      }
+      freeIntervals = newFree;
+    }
+
+    for (const interval of freeIntervals) {
+      const durationMs = interval.end.getTime() - interval.start.getTime();
+      if (durationMs >= 30 * 60 * 1000) {
+        result.push(interval);
+      }
+    }
+  }
+
+  return result;
+}
+
+function priorityScore(priority: string): number {
+  switch (priority) {
+    case "high": return 3;
+    case "medium": return 2;
+    case "low": return 1;
+    default: return 1;
+  }
+}
+
+function urgencyScore(deadline: string): number {
+  const now = Date.now();
+  const dl = new Date(deadline).getTime();
+  const hoursLeft = (dl - now) / (1000 * 60 * 60);
+
+  if (hoursLeft < 0) return 10;
+  if (hoursLeft < 24) return 9;
+  if (hoursLeft < 48) return 7;
+  if (hoursLeft < 72) return 5;
+  if (hoursLeft < 168) return 3;
+  return 1;
+}
+
+export function scheduleTasks(
+  tasks: Task[],
+  availability: WeekAvailability,
+  calendarEvents: CalendarEvent[]
+): ScheduledTask[] {
+  const now = new Date();
+  const pending = tasks
+    .filter((t) => !t.isCompleted)
+    .map((t) => ({
+      task: t,
+      score: priorityScore(t.priority) * 2 + urgencyScore(t.deadline),
+    }))
+    .sort((a, b) => b.score - a.score)
+    .map((x) => x.task);
+
+  const scheduled: ScheduledTask[] = [];
+  const scheduledIntervals: Array<{ start: Date; end: Date }> = [];
+
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+
+  for (const task of pending) {
+    const estimatedMs = task.estimatedHours * 60 * 60 * 1000;
+    const deadline = new Date(task.deadline);
+    let placed = false;
+
+    for (let dayOffset = 0; dayOffset < 30 && !placed; dayOffset++) {
+      const day = new Date(today);
+      day.setDate(today.getDate() + dayOffset);
+
+      if (day > deadline) break;
+
+      const calBusy = getBusyIntervals(calendarEvents, day);
+      const freeSlots = getAvailableSlots(day, availability, calBusy, scheduledIntervals);
+
+      for (const slot of freeSlots) {
+        const slotMs = slot.end.getTime() - slot.start.getTime();
+        if (slotMs >= estimatedMs) {
+          const start = new Date(Math.max(slot.start.getTime(), now.getTime()));
+          const end = new Date(start.getTime() + estimatedMs);
+          if (end <= slot.end) {
+            scheduled.push({ task, start, end });
+            scheduledIntervals.push({ start, end });
+            placed = true;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  return scheduled;
+}

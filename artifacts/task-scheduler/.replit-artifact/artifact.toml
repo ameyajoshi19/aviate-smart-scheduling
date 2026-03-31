@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/"
+title = "Smart Task Scheduler"
+version = "1.0.0"
+id = "artifacts/task-scheduler"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/" ]
+localPort = 19383
+
+[services.development]
+run = "pnpm --filter @workspace/task-scheduler run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/task-scheduler", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/task-scheduler", "run", "serve" ]
+
+[services.env]
+PORT = "19383"
+BASE_PATH = "/"

@@ -1,0 +1,14 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "bUULU6QsHpgVXnzXQnDWs"
+uri = "file://artifacts/task-scheduler/assets/images/icon.png"
+type = "image"
+title = "task scheduler app icon"
+
+[[generated]]
+id = "Te7vT_aW3V19p6VEQWnqS"
+uri = "file://artifacts/task-scheduler/assets/images/splash-icon.png"
+type = "image"
+title = "task scheduler splash icon"
