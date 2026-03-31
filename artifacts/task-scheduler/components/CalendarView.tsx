@@ -189,13 +189,12 @@ export function CalendarView({ scheduledEntries, onReschedule }: CalendarViewPro
               const dayEntries = entriesThisWeek.filter((e) => isSameDay(e.start, day));
               const isSelected = isSameDay(day, selectedDay);
               return (
-                <Pressable
+                <View
                   key={di}
                   style={[
                     styles.dayTaskCol,
                     isSelected && { backgroundColor: colors.primary + "0D", borderRadius: 8 },
                   ]}
-                  onPress={() => handleDayPress(day)}
                 >
                   {dayEntries.length === 0 ? (
                     <View style={styles.emptyCol} />
@@ -222,7 +221,7 @@ export function CalendarView({ scheduledEntries, onReschedule }: CalendarViewPro
                       );
                     })
                   )}
-                </Pressable>
+                </View>
               );
             })}
           </View>
