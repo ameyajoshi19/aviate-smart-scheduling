@@ -28,7 +28,7 @@ type ViewMode = "timeline" | "calendar";
 export default function ScheduleScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { tasks, availability, updateTask } = useApp();
+  const { tasks, availability, updateTask, batchUpdateTasks } = useApp();
   const { isConnected, events, isLoading: calLoading, refreshEvents, createEvent } = useCalendar();
   const [isScheduling, setIsScheduling] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("timeline");
@@ -72,6 +72,8 @@ export default function ScheduleScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setIsScheduling(true);
     try {
+      // Build all updates first, then write in one atomic batch to avoid stale-closure overwrites
+      const updateList: Array<{ id: string; updates: Partial<Task> }> = [];
       for (const entry of scheduled) {
         const updates: Partial<Task> = {
           scheduledStart: entry.start.toISOString(),
@@ -86,8 +88,9 @@ export default function ScheduleScreen() {
           });
           if (eventId) updates.googleEventId = eventId;
         }
-        await updateTask(entry.task.id, updates);
+        updateList.push({ id: entry.task.id, updates });
       }
+      await batchUpdateTasks(updateList);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert(
         "Schedule Applied",

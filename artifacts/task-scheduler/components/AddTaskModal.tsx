@@ -16,21 +16,25 @@ import {
   View,
 } from "react-native";
 
-import { Priority, useApp } from "../context/AppContext";
+import { Priority, Task, useApp } from "../context/AppContext";
 import { useColors } from "../hooks/useColors";
+
+type TaskFields = {
+  title: string;
+  description: string;
+  priority: Priority;
+  deadline: string;
+  estimatedHours: number;
+  labels: string[];
+  isCompleted: boolean;
+};
 
 interface AddTaskModalProps {
   visible: boolean;
   onClose: () => void;
-  onAdd: (task: {
-    title: string;
-    description: string;
-    priority: Priority;
-    deadline: string;
-    estimatedHours: number;
-    labels: string[];
-    isCompleted: boolean;
-  }) => void;
+  onAdd: (task: TaskFields) => void;
+  editTask?: Task | null;
+  onEdit?: (id: string, updates: Partial<Task>) => void;
 }
 
 const PRIORITIES: { key: Priority; label: string; color: string }[] = [
@@ -63,9 +67,11 @@ function getLabelColor(label: string): string {
   return LABEL_COLORS[Math.abs(hash) % LABEL_COLORS.length];
 }
 
-export function AddTaskModal({ visible, onClose, onAdd }: AddTaskModalProps) {
+export function AddTaskModal({ visible, onClose, onAdd, editTask, onEdit }: AddTaskModalProps) {
   const colors = useColors();
   const { userLabels, addUserLabel } = useApp();
+  const isEditing = !!editTask;
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<Priority>("medium");
@@ -75,6 +81,21 @@ export function AddTaskModal({ visible, onClose, onAdd }: AddTaskModalProps) {
   const [newLabelText, setNewLabelText] = useState("");
   const [showNewLabel, setShowNewLabel] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // Pre-fill when switching into edit mode
+  React.useEffect(() => {
+    if (editTask && visible) {
+      setTitle(editTask.title);
+      setDescription(editTask.description ?? "");
+      setPriority(editTask.priority);
+      setDeadline(new Date(editTask.deadline));
+      setEstimatedHours(editTask.estimatedHours);
+      setSelectedLabels(editTask.labels ?? []);
+      setNewLabelText("");
+      setShowNewLabel(false);
+      setShowDatePicker(false);
+    }
+  }, [editTask, visible]);
 
   const reset = () => {
     setTitle("");
@@ -89,7 +110,7 @@ export function AddTaskModal({ visible, onClose, onAdd }: AddTaskModalProps) {
   };
 
   const handleClose = () => {
-    reset();
+    if (!isEditing) reset();
     onClose();
   };
 
@@ -99,16 +120,27 @@ export function AddTaskModal({ visible, onClose, onAdd }: AddTaskModalProps) {
       return;
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    onAdd({
-      title: title.trim(),
-      description: description.trim(),
-      priority,
-      deadline: deadline.toISOString(),
-      estimatedHours,
-      labels: selectedLabels,
-      isCompleted: false,
-    });
-    reset();
+    if (isEditing && onEdit && editTask) {
+      onEdit(editTask.id, {
+        title: title.trim(),
+        description: description.trim(),
+        priority,
+        deadline: deadline.toISOString(),
+        estimatedHours,
+        labels: selectedLabels,
+      });
+    } else {
+      onAdd({
+        title: title.trim(),
+        description: description.trim(),
+        priority,
+        deadline: deadline.toISOString(),
+        estimatedHours,
+        labels: selectedLabels,
+        isCompleted: false,
+      });
+      reset();
+    }
     onClose();
   };
 
@@ -145,9 +177,9 @@ export function AddTaskModal({ visible, onClose, onAdd }: AddTaskModalProps) {
           <TouchableOpacity onPress={handleClose}>
             <Text style={[styles.cancelText, { color: colors.mutedForeground }]}>Cancel</Text>
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.foreground }]}>New Task</Text>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>{isEditing ? "Edit Task" : "New Task"}</Text>
           <TouchableOpacity onPress={handleAdd}>
-            <Text style={[styles.addText, { color: colors.primary }]}>Add</Text>
+            <Text style={[styles.addText, { color: colors.primary }]}>{isEditing ? "Save" : "Add"}</Text>
           </TouchableOpacity>
         </View>
 

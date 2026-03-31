@@ -68,6 +68,7 @@ interface AppContextValue {
   userLabels: string[];
   addTask: (task: Omit<Task, "id" | "createdAt">) => Promise<void>;
   updateTask: (id: string, updates: Partial<Task>) => Promise<void>;
+  batchUpdateTasks: (updates: Array<{ id: string; updates: Partial<Task> }>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
   saveAvailability: (avail: WeekAvailability) => Promise<void>;
   addUserLabel: (label: string) => Promise<void>;
@@ -122,6 +123,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await saveTasks(updated);
   }, [tasks]);
 
+  const batchUpdateTasks = useCallback(async (updateList: Array<{ id: string; updates: Partial<Task> }>) => {
+    const updateMap = new Map(updateList.map(({ id, updates }) => [id, updates]));
+    const updated = tasks.map((t) => updateMap.has(t.id) ? { ...t, ...updateMap.get(t.id) } : t);
+    await saveTasks(updated);
+  }, [tasks]);
+
   const deleteTask = useCallback(async (id: string) => {
     await saveTasks(tasks.filter((t) => t.id !== id));
   }, [tasks]);
@@ -148,7 +155,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider value={{
       tasks, availability, userLabels,
-      addTask, updateTask, deleteTask,
+      addTask, updateTask, batchUpdateTasks, deleteTask,
       saveAvailability, addUserLabel, removeUserLabel,
       isLoading,
     }}>

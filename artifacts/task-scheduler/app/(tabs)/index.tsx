@@ -51,6 +51,7 @@ export default function TasksScreen() {
   const { tasks, userLabels, availability, addTask, updateTask, deleteTask, isLoading } = useApp();
   const { events } = useCalendar();
   const [showAdd, setShowAdd] = useState(false);
+  const [editTask, setEditTask] = useState<Task | null>(null);
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all");
   const [labelFilter, setLabelFilter] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -254,7 +255,10 @@ export default function TasksScreen() {
           <TaskCard
             task={item}
             index={index}
-            onPress={() => {}}
+            onPress={() => {
+              Haptics.selectionAsync();
+              setEditTask(item);
+            }}
             onComplete={() => handleComplete(item)}
             onDelete={() => handleDelete(item)}
             onReschedule={() => handleAutoReschedule(item)}
@@ -263,6 +267,17 @@ export default function TasksScreen() {
       />
 
       <AddTaskModal visible={showAdd} onClose={() => setShowAdd(false)} onAdd={addTask} />
+
+      <AddTaskModal
+        visible={editTask !== null}
+        onClose={() => setEditTask(null)}
+        onAdd={addTask}
+        editTask={editTask}
+        onEdit={async (id, updates) => {
+          await updateTask(id, updates);
+          setEditTask(null);
+        }}
+      />
 
       <RescheduleModal
         task={rescheduleTask}
