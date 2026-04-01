@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Calendar, Clock } from "lucide-react-native";
+import { ChevronLeft, ChevronRight, Calendar, Clock, CircleCheckBig } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -10,16 +10,12 @@ import {
 } from "react-native";
 
 import { Task } from "../context/AppContext";
+import { ScheduledTask } from "../utils/scheduler";
 import { useColors } from "../hooks/useColors";
 
-interface ScheduledEntry {
-  task: Task;
-  start: Date;
-  end: Date;
-}
-
 interface CalendarViewProps {
-  scheduledEntries: ScheduledEntry[];
+  scheduledEntries: ScheduledTask[];
+  completedEntries?: ScheduledTask[];
   onReschedule: (task: Task) => void;
 }
 
@@ -52,9 +48,16 @@ function formatTime(d: Date) {
   return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
 }
 
+function getSplitLabel(entry: ScheduledTask): string | null {
+  if (entry.splitTotalParts && entry.splitTotalParts > 1 && entry.splitPartIndex) {
+    return `Part ${entry.splitPartIndex}/${entry.splitTotalParts}`;
+  }
+  return null;
+}
+
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-export function CalendarView({ scheduledEntries, onReschedule }: CalendarViewProps) {
+export function CalendarView({ scheduledEntries, completedEntries = [], onReschedule }: CalendarViewProps) {
   const colors = useColors();
   const [weekOffset, setWeekOffset] = useState(0);
   const today = useMemo(() => new Date(), []);
@@ -67,20 +70,30 @@ export function CalendarView({ scheduledEntries, onReschedule }: CalendarViewPro
 
   const weekDays = useMemo(() => getWeekDays(baseDate), [baseDate]);
 
+  const allEntries = useMemo(() => [...scheduledEntries, ...completedEntries], [scheduledEntries, completedEntries]);
+
   const entriesThisWeek = useMemo(() => {
     return scheduledEntries.filter((e) =>
       weekDays.some((d) => isSameDay(e.start, d))
     );
   }, [scheduledEntries, weekDays]);
 
+  const completedThisWeek = useMemo(() => {
+    return completedEntries.filter((e) =>
+      weekDays.some((d) => isSameDay(e.start, d))
+    );
+  }, [completedEntries, weekDays]);
+
+  const allThisWeek = useMemo(() => [...entriesThisWeek, ...completedThisWeek], [entriesThisWeek, completedThisWeek]);
+
   const defaultSelectedDay = useMemo(() => {
     const todayInWeek = weekDays.find((d) => isSameDay(d, today));
     if (todayInWeek) return todayInWeek;
     const firstWithTask = weekDays.find((d) =>
-      entriesThisWeek.some((e) => isSameDay(e.start, d))
+      allThisWeek.some((e) => isSameDay(e.start, d))
     );
     return firstWithTask ?? weekDays[0];
-  }, [weekDays, today, entriesThisWeek]);
+  }, [weekDays, today, allThisWeek]);
 
   const [selectedDay, setSelectedDay] = useState<Date>(defaultSelectedDay);
 
@@ -101,6 +114,12 @@ export function CalendarView({ scheduledEntries, onReschedule }: CalendarViewPro
       .filter((e) => isSameDay(e.start, selectedDay))
       .sort((a, b) => a.start.getTime() - b.start.getTime());
   }, [entriesThisWeek, selectedDay]);
+
+  const selectedDayCompleted = useMemo(() => {
+    return completedThisWeek
+      .filter((e) => isSameDay(e.start, selectedDay))
+      .sort((a, b) => a.start.getTime() - b.start.getTime());
+  }, [completedThisWeek, selectedDay]);
 
   const handleDayPress = (day: Date) => {
     Haptics.selectionAsync();
@@ -133,12 +152,14 @@ export function CalendarView({ scheduledEntries, onReschedule }: CalendarViewPro
         </Pressable>
       </View>
 
-      {/* Day columns header — each day is now tappable */}
+      {/* Day columns header */}
       <View style={[styles.dayHeader, { borderColor: colors.border }]}>
         {weekDays.map((day, i) => {
           const isToday = isSameDay(day, today);
           const isSelected = isSameDay(day, selectedDay);
-          const hasTask = entriesThisWeek.some((e) => isSameDay(e.start, day));
+          const hasActiveTask = entriesThisWeek.some((e) => isSameDay(e.start, day));
+          const hasCompletedTask = completedThisWeek.some((e) => isSameDay(e.start, day));
+          const hasTask = hasActiveTask || hasCompletedTask;
           return (
             <Pressable
               key={i}
@@ -174,8 +195,8 @@ export function CalendarView({ scheduledEntries, onReschedule }: CalendarViewPro
         })}
       </View>
 
-      {/* Task mini-grid — selected column gets a tinted background */}
-      {entriesThisWeek.length === 0 ? (
+      {/* Mini task grid */}
+      {allThisWeek.length === 0 ? (
         <View style={styles.emptyWeek}>
           <Calendar size={28} color={colors.mutedForeground} />
           <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
@@ -186,7 +207,8 @@ export function CalendarView({ scheduledEntries, onReschedule }: CalendarViewPro
         <ScrollView showsVerticalScrollIndicator={false} style={styles.taskGrid}>
           <View style={styles.dayRow}>
             {weekDays.map((day, di) => {
-              const dayEntries = entriesThisWeek.filter((e) => isSameDay(e.start, day));
+              const dayActiveEntries = entriesThisWeek.filter((e) => isSameDay(e.start, day));
+              const dayCompletedEntries = completedThisWeek.filter((e) => isSameDay(e.start, day));
               const isSelected = isSameDay(day, selectedDay);
               return (
                 <View
@@ -196,30 +218,46 @@ export function CalendarView({ scheduledEntries, onReschedule }: CalendarViewPro
                     isSelected && { backgroundColor: colors.primary + "0D", borderRadius: 8 },
                   ]}
                 >
-                  {dayEntries.length === 0 ? (
+                  {dayActiveEntries.length === 0 && dayCompletedEntries.length === 0 ? (
                     <View style={styles.emptyCol} />
                   ) : (
-                    dayEntries.map((entry) => {
-                      const color = getPriorityColor(entry.task.priority);
-                      return (
-                        <Pressable
-                          key={entry.task.id}
-                          style={[styles.taskBlock, {
-                            backgroundColor: color + "18",
-                            borderColor: color + "60",
-                            borderLeftColor: color,
+                    <>
+                      {dayActiveEntries.map((entry) => {
+                        const color = getPriorityColor(entry.task.priority);
+                        return (
+                          <Pressable
+                            key={entry.task.id + entry.start.getTime()}
+                            style={[styles.taskBlock, {
+                              backgroundColor: color + "18",
+                              borderColor: color + "60",
+                              borderLeftColor: color,
+                            }]}
+                            onPress={() => onReschedule(entry.task)}
+                          >
+                            <Text style={[styles.taskBlockTitle, { color: colors.foreground }]} numberOfLines={2}>
+                              {entry.task.title}
+                            </Text>
+                            <Text style={[styles.taskBlockTime, { color: colors.mutedForeground }]}>
+                              {formatTime(entry.start)}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                      {dayCompletedEntries.map((entry) => (
+                        <View
+                          key={entry.task.id + entry.start.getTime() + "done"}
+                          style={[styles.taskBlock, styles.taskBlockDone, {
+                            backgroundColor: colors.muted,
+                            borderColor: colors.border,
+                            borderLeftColor: colors.success + "80",
                           }]}
-                          onPress={() => onReschedule(entry.task)}
                         >
-                          <Text style={[styles.taskBlockTitle, { color: colors.foreground }]} numberOfLines={2}>
+                          <Text style={[styles.taskBlockTitle, { color: colors.mutedForeground, textDecorationLine: "line-through" }]} numberOfLines={2}>
                             {entry.task.title}
                           </Text>
-                          <Text style={[styles.taskBlockTime, { color: colors.mutedForeground }]}>
-                            {formatTime(entry.start)}
-                          </Text>
-                        </Pressable>
-                      );
-                    })
+                        </View>
+                      ))}
+                    </>
                   )}
                 </View>
               );
@@ -228,42 +266,73 @@ export function CalendarView({ scheduledEntries, onReschedule }: CalendarViewPro
         </ScrollView>
       )}
 
-      {/* Task list filtered to selected day */}
-      {entriesThisWeek.length > 0 && (
+      {/* Task list for selected day */}
+      {allThisWeek.length > 0 && (
         <View style={styles.listSection}>
           <Text style={[styles.listTitle, { color: colors.mutedForeground }]}>
             {selectedDayLabel}
           </Text>
-          {selectedDayEntries.length === 0 ? (
+          {selectedDayEntries.length === 0 && selectedDayCompleted.length === 0 ? (
             <View style={styles.emptyDay}>
               <Text style={[styles.emptyDayText, { color: colors.mutedForeground }]}>
                 No tasks scheduled
               </Text>
             </View>
           ) : (
-            selectedDayEntries.map((entry) => {
-              const color = getPriorityColor(entry.task.priority);
-              return (
-                <Pressable
-                  key={entry.task.id}
-                  style={[styles.listItem, { backgroundColor: colors.card, borderColor: colors.border }]}
-                  onPress={() => onReschedule(entry.task)}
+            <>
+              {selectedDayEntries.map((entry) => {
+                const color = getPriorityColor(entry.task.priority);
+                const splitLabel = getSplitLabel(entry);
+                return (
+                  <Pressable
+                    key={entry.task.id + entry.start.getTime()}
+                    style={[styles.listItem, { backgroundColor: colors.card, borderColor: colors.border }]}
+                    onPress={() => onReschedule(entry.task)}
+                  >
+                    <View style={[styles.listBar, { backgroundColor: color }]} />
+                    <View style={styles.listContent}>
+                      <View style={styles.listTitleRow}>
+                        <Text style={[styles.listItemTitle, { color: colors.foreground }]} numberOfLines={1}>
+                          {entry.task.title}
+                        </Text>
+                        {splitLabel && (
+                          <View style={[styles.splitBadge, { backgroundColor: colors.primary + "18", borderColor: colors.primary + "40" }]}>
+                            <Text style={[styles.splitBadgeText, { color: colors.primary }]}>{splitLabel}</Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text style={[styles.listItemTime, { color: colors.mutedForeground }]}>
+                        {formatTime(entry.start)} – {formatTime(entry.end)}
+                      </Text>
+                    </View>
+                    <View style={styles.rescheduleHint}>
+                      <Clock size={13} color={colors.primary} />
+                    </View>
+                  </Pressable>
+                );
+              })}
+              {selectedDayCompleted.map((entry) => (
+                <View
+                  key={entry.task.id + entry.start.getTime() + "done"}
+                  style={[styles.listItem, styles.listItemDone, { backgroundColor: colors.muted, borderColor: colors.border }]}
                 >
-                  <View style={[styles.listBar, { backgroundColor: color }]} />
+                  <View style={[styles.listBar, { backgroundColor: colors.success + "60" }]} />
                   <View style={styles.listContent}>
-                    <Text style={[styles.listItemTitle, { color: colors.foreground }]} numberOfLines={1}>
-                      {entry.task.title}
-                    </Text>
+                    <View style={styles.listTitleRow}>
+                      <Text style={[styles.listItemTitle, { color: colors.mutedForeground, textDecorationLine: "line-through" }]} numberOfLines={1}>
+                        {entry.task.title}
+                      </Text>
+                    </View>
                     <Text style={[styles.listItemTime, { color: colors.mutedForeground }]}>
                       {formatTime(entry.start)} – {formatTime(entry.end)}
                     </Text>
                   </View>
                   <View style={styles.rescheduleHint}>
-                    <Clock size={13} color={colors.primary} />
+                    <CircleCheckBig size={13} color={colors.success} />
                   </View>
-                </Pressable>
-              );
-            })
+                </View>
+              ))}
+            </>
           )}
         </View>
       )}
@@ -299,6 +368,7 @@ const styles = StyleSheet.create({
     borderRadius: 8, borderWidth: 1, borderLeftWidth: 3,
     padding: 6, gap: 2,
   },
+  taskBlockDone: { opacity: 0.6 },
   taskBlockTitle: { fontSize: 11, fontFamily: "Inter_600SemiBold", lineHeight: 14 },
   taskBlockTime: { fontSize: 10, fontFamily: "Inter_400Regular" },
   listSection: { gap: 8 },
@@ -309,9 +379,16 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center",
     borderRadius: 12, borderWidth: 1, overflow: "hidden",
   },
+  listItemDone: { opacity: 0.8 },
   listBar: { width: 4, alignSelf: "stretch" },
   listContent: { flex: 1, padding: 12, gap: 2 },
-  listItemTitle: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  listTitleRow: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
+  listItemTitle: { fontSize: 14, fontFamily: "Inter_600SemiBold", flexShrink: 1 },
   listItemTime: { fontSize: 12, fontFamily: "Inter_400Regular" },
   rescheduleHint: { paddingRight: 14 },
+  splitBadge: {
+    paddingHorizontal: 6, paddingVertical: 2,
+    borderRadius: 6, borderWidth: 1,
+  },
+  splitBadgeText: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
 });

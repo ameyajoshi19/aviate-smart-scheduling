@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,12 +17,20 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useCalendar } from "@/context/CalendarContext";
+import { ThemeMode, useTheme } from "@/context/ThemeContext";
 import { useColors } from "@/hooks/useColors";
+
+const THEME_OPTIONS: { key: ThemeMode; label: string; desc: string }[] = [
+  { key: "light", label: "Light", desc: "Always light" },
+  { key: "dark", label: "Dark", desc: "Always dark" },
+  { key: "auto", label: "Auto", desc: "Follow system" },
+];
 
 export default function SettingsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { isConnected, events, isLoading, connect, disconnect, refreshEvents } = useCalendar();
+  const { themeMode, setThemeMode } = useTheme();
   const [isConnecting, setIsConnecting] = useState(false);
 
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
@@ -84,6 +93,42 @@ export default function SettingsScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
+        {/* APPEARANCE */}
+        <Animated.View entering={FadeInDown.delay(50).duration(400)}>
+          <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>APPEARANCE</Text>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.themeRow}>
+              {THEME_OPTIONS.map((opt) => {
+                const active = themeMode === opt.key;
+                return (
+                  <Pressable
+                    key={opt.key}
+                    style={[
+                      styles.themeBtn,
+                      {
+                        backgroundColor: active ? colors.primary + "18" : colors.muted,
+                        borderColor: active ? colors.primary : colors.border,
+                      },
+                    ]}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setThemeMode(opt.key);
+                    }}
+                  >
+                    <Text style={[styles.themeBtnLabel, { color: active ? colors.primary : colors.foreground }]}>
+                      {opt.label}
+                    </Text>
+                    <Text style={[styles.themeBtnDesc, { color: active ? colors.primary + "aa" : colors.mutedForeground }]}>
+                      {opt.desc}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        </Animated.View>
+
+        {/* GOOGLE CALENDAR */}
         <Animated.View entering={FadeInDown.delay(100).duration(400)}>
           <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>GOOGLE CALENDAR</Text>
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -146,13 +191,14 @@ export default function SettingsScreen() {
           </View>
         </Animated.View>
 
+        {/* HOW IT WORKS */}
         <Animated.View entering={FadeInDown.delay(200).duration(400)}>
           <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>HOW IT WORKS</Text>
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             {([
-              { Icon: List, title: "Add your tasks", desc: "Enter title, priority, deadline, and estimated time" },
+              { Icon: List, title: "Add your tasks", desc: "Enter title, priority, deadline, estimated time, and preferred days" },
               { Icon: Clock, title: "Set your availability", desc: "Define which hours you're free each day of the week" },
-              { Icon: Zap, title: "Auto-schedule", desc: "The algorithm schedules by priority & urgency, avoiding calendar conflicts" },
+              { Icon: Zap, title: "Auto-schedule", desc: "The algorithm schedules by priority & urgency, respecting your day preferences" },
               { Icon: Calendar, title: "Calendar events", desc: "Creates Google Calendar events with the scheduled times" },
             ] as { Icon: LucideIcon; title: string; desc: string }[]).map((item, i) => (
               <View
@@ -205,6 +251,29 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     overflow: "hidden",
+  },
+  themeRow: {
+    flexDirection: "row",
+    gap: 10,
+    padding: 16,
+  },
+  themeBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    alignItems: "center",
+    gap: 4,
+  },
+  themeBtnLabel: {
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+  },
+  themeBtnDesc: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    textAlign: "center",
   },
   calendarHeader: {
     flexDirection: "row",

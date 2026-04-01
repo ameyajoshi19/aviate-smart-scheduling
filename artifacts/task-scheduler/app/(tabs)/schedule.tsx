@@ -21,7 +21,7 @@ import { ScheduleTimeline } from "@/components/ScheduleTimeline";
 import { Task, useApp } from "@/context/AppContext";
 import { useCalendar } from "@/context/CalendarContext";
 import { useColors } from "@/hooks/useColors";
-import { scheduleTasks } from "@/utils/scheduler";
+import { scheduleTasks, ScheduledTask } from "@/utils/scheduler";
 
 type ViewMode = "timeline" | "calendar";
 
@@ -52,7 +52,7 @@ export default function ScheduleScreen() {
 
   const scheduledEntries = useMemo(() =>
     scheduled
-      .map((s) => ({ task: s.task, start: s.start, end: s.end }))
+      .map((s) => ({ task: s.task, start: s.start, end: s.end, splitPartIndex: s.splitPartIndex, splitTotalParts: s.splitTotalParts }))
       .sort((a, b) => a.start.getTime() - b.start.getTime()),
     [scheduled]
   );
@@ -61,7 +61,7 @@ export default function ScheduleScreen() {
     tasks.filter((t) => !t.isCompleted && t.scheduledStart),
     [tasks]
   );
-  const appliedEntries = useMemo(() =>
+  const appliedEntries = useMemo((): ScheduledTask[] =>
     appliedTasks
       .map((t) => ({
         task: t,
@@ -72,11 +72,22 @@ export default function ScheduleScreen() {
     [appliedTasks]
   );
 
+  const completedEntries = useMemo((): ScheduledTask[] =>
+    tasks
+      .filter((t) => t.isCompleted && t.scheduledStart && t.scheduledEnd)
+      .map((t) => ({
+        task: t,
+        start: new Date(t.scheduledStart!),
+        end: new Date(t.scheduledEnd!),
+      }))
+      .sort((a, b) => a.start.getTime() - b.start.getTime()),
+    [tasks]
+  );
+
   const handleAutoSchedule = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setIsScheduling(true);
     try {
-      // Build all updates first, then write in one atomic batch to avoid stale-closure overwrites
       const updateList: Array<{ id: string; updates: Partial<Task> }> = [];
       for (const entry of scheduled) {
         const updates: Partial<Task> = {
@@ -212,6 +223,7 @@ export default function ScheduleScreen() {
         ) : (
           <CalendarView
             scheduledEntries={appliedEntries.length > 0 ? appliedEntries : scheduledEntries}
+            completedEntries={completedEntries}
             onReschedule={(task) => setRescheduleTask(task)}
           />
         )}

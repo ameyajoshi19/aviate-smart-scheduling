@@ -317,21 +317,39 @@ export default function TasksScreen() {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
         }
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <SquareCheckBig size={40} color={colors.mutedForeground} />
-            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
-              {priorityFilter === "completed" ? "No completed tasks" : labelFilter ? `No tasks with "${labelFilter}"` : "No tasks yet"}
-            </Text>
-            <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              {priorityFilter === "completed"
-                ? "Complete tasks to see them here"
-                : labelFilter
-                ? "Try a different label filter"
-                : "Tap the + button to add your first task"}
-            </Text>
-          </View>
-        }
+        ListEmptyComponent={(() => {
+          const allDone =
+            tasks.length > 0 &&
+            tasks.every((t) => t.isCompleted) &&
+            priorityFilter === "all" &&
+            labelFilter === null;
+          if (allDone) {
+            return (
+              <View style={styles.emptyState}>
+                <Text style={styles.celebrationEmoji}>🎉</Text>
+                <Text style={[styles.emptyTitle, { color: colors.success }]}>All tasks complete!</Text>
+                <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
+                  Outstanding work — you've cleared every task. Add new ones whenever you're ready.
+                </Text>
+              </View>
+            );
+          }
+          return (
+            <View style={styles.emptyState}>
+              <SquareCheckBig size={40} color={colors.mutedForeground} />
+              <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
+                {priorityFilter === "completed" ? "No completed tasks" : labelFilter ? `No tasks with "${labelFilter}"` : "No tasks yet"}
+              </Text>
+              <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
+                {priorityFilter === "completed"
+                  ? "Complete tasks to see them here"
+                  : labelFilter
+                  ? "Try a different label filter"
+                  : "Tap the + button to add your first task"}
+              </Text>
+            </View>
+          );
+        })()}
         renderItem={({ item, index }) => (
           <TaskCard
             task={item}
@@ -453,6 +471,7 @@ const styles = StyleSheet.create({
   sheetDoneText: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
   listContent: { paddingHorizontal: 20, paddingTop: 6 },
   emptyState: { alignItems: "center", paddingTop: 80, gap: 12 },
+  celebrationEmoji: { fontSize: 48 },
   emptyTitle: { fontSize: 18, fontFamily: "Inter_600SemiBold" },
   emptyText: {
     fontSize: 14, fontFamily: "Inter_400Regular",

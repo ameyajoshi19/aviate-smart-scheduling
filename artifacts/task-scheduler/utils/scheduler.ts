@@ -5,10 +5,14 @@ const DAY_KEYS: DayKey[] = [
   "sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"
 ];
 
-interface ScheduledTask {
+const MIN_SLOT_MS = 15 * 60 * 1000;
+
+export interface ScheduledTask {
   task: Task;
   start: Date;
   end: Date;
+  splitPartIndex?: number;
+  splitTotalParts?: number;
 }
 
 function isTimeOverlap(
@@ -84,7 +88,7 @@ function getAvailableSlots(
 
     for (const interval of freeIntervals) {
       const durationMs = interval.end.getTime() - interval.start.getTime();
-      if (durationMs >= 15 * 60 * 1000) {
+      if (durationMs >= MIN_SLOT_MS) {
         result.push(interval);
       }
     }
@@ -115,6 +119,14 @@ function urgencyScore(deadline: string): number {
   return 1;
 }
 
+function dayMatchesPreference(day: Date, preferredDays?: string): boolean {
+  if (!preferredDays || preferredDays === "any") return true;
+  const dow = day.getDay();
+  if (preferredDays === "weekdays") return dow >= 1 && dow <= 5;
+  if (preferredDays === "weekends") return dow === 0 || dow === 6;
+  return true;
+}
+
 export function findNewSlotForTask(
   task: Task,
   allTasks: Task[],
@@ -139,6 +151,7 @@ export function findNewSlotForTask(
     const day = new Date(today);
     day.setDate(today.getDate() + dayOffset);
     if (day > deadline) break;
+    if (!dayMatchesPreference(day, task.preferredDays)) continue;
 
     const calBusy = getBusyIntervals(calendarEvents, day);
     const blocked = [...otherIntervals, ...calBusy];
@@ -198,8 +211,8 @@ export function scheduleTasks(
     for (let dayOffset = 0; dayOffset < 30 && !placed; dayOffset++) {
       const day = new Date(today);
       day.setDate(today.getDate() + dayOffset);
-
       if (day > deadline) break;
+      if (!dayMatchesPreference(day, task.preferredDays)) continue;
 
       const calBusy = getBusyIntervals(calendarEvents, day);
       const freeSlots = getAvailableSlots(day, availability, calBusy, scheduledIntervals);
@@ -216,6 +229,47 @@ export function scheduleTasks(
             break;
           }
         }
+      }
+    }
+
+    if (!placed && task.canBeSplit) {
+      const splitParts: ScheduledTask[] = [];
+      let remainingMs = estimatedMs;
+
+      for (let dayOffset = 0; dayOffset < 30 && remainingMs > 0; dayOffset++) {
+        const day = new Date(today);
+        day.setDate(today.getDate() + dayOffset);
+        if (day > deadline) break;
+        if (!dayMatchesPreference(day, task.preferredDays)) continue;
+
+        const calBusy = getBusyIntervals(calendarEvents, day);
+        const freeSlots = getAvailableSlots(day, availability, calBusy, scheduledIntervals);
+
+        for (const slot of freeSlots) {
+          if (remainingMs <= 0) break;
+          const slotStart = new Date(Math.max(slot.start.getTime(), now.getTime()));
+          const slotAvailableMs = slot.end.getTime() - slotStart.getTime();
+          if (slotAvailableMs < MIN_SLOT_MS) continue;
+
+          const takeMs = Math.min(remainingMs, slotAvailableMs);
+          const partStart = slotStart;
+          const partEnd = new Date(partStart.getTime() + takeMs);
+
+          splitParts.push({ task, start: partStart, end: partEnd });
+          scheduledIntervals.push({ start: partStart, end: partEnd });
+          remainingMs -= takeMs;
+        }
+      }
+
+      if (remainingMs === 0 && splitParts.length > 1) {
+        const total = splitParts.length;
+        splitParts.forEach((part, idx) => {
+          part.splitPartIndex = idx + 1;
+          part.splitTotalParts = total;
+          scheduled.push(part);
+        });
+      } else if (remainingMs === 0 && splitParts.length === 1) {
+        scheduled.push(splitParts[0]);
       }
     }
   }

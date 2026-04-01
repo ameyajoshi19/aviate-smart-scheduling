@@ -16,7 +16,7 @@ import {
   View,
 } from "react-native";
 
-import { Priority, Task, useApp } from "../context/AppContext";
+import { Priority, PreferredDays, Task, useApp } from "../context/AppContext";
 import { useColors } from "../hooks/useColors";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -28,6 +28,8 @@ type TaskFields = {
   estimatedHours: number;
   labels: string[];
   isCompleted: boolean;
+  preferredDays: PreferredDays;
+  canBeSplit: boolean;
 };
 
 interface AddTaskModalProps {
@@ -42,6 +44,12 @@ const PRIORITIES: { key: Priority; label: string; color: string }[] = [
   { key: "high", label: "High", color: "#ef4444" },
   { key: "medium", label: "Medium", color: "#f59e0b" },
   { key: "low", label: "Low", color: "#22c55e" },
+];
+
+const PREFERRED_DAYS_OPTIONS: { key: PreferredDays; label: string; desc: string }[] = [
+  { key: "any", label: "Any", desc: "Any day of the week" },
+  { key: "weekdays", label: "Weekdays", desc: "Mon – Fri only" },
+  { key: "weekends", label: "Weekends", desc: "Sat & Sun only" },
 ];
 
 const DURATION_PRESETS: { label: string; hours: number }[] = [
@@ -83,8 +91,9 @@ export function AddTaskModal({ visible, onClose, onAdd, editTask, onEdit }: AddT
   const [newLabelText, setNewLabelText] = useState("");
   const [showNewLabel, setShowNewLabel] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [preferredDays, setPreferredDays] = useState<PreferredDays>("any");
+  const [canBeSplit, setCanBeSplit] = useState(false);
 
-  // Pre-fill when switching into edit mode
   React.useEffect(() => {
     if (editTask && visible) {
       setTitle(editTask.title);
@@ -96,6 +105,8 @@ export function AddTaskModal({ visible, onClose, onAdd, editTask, onEdit }: AddT
       setNewLabelText("");
       setShowNewLabel(false);
       setShowDatePicker(false);
+      setPreferredDays(editTask.preferredDays ?? "any");
+      setCanBeSplit(editTask.canBeSplit ?? false);
     }
   }, [editTask, visible]);
 
@@ -109,6 +120,8 @@ export function AddTaskModal({ visible, onClose, onAdd, editTask, onEdit }: AddT
     setNewLabelText("");
     setShowNewLabel(false);
     setShowDatePicker(false);
+    setPreferredDays("any");
+    setCanBeSplit(false);
   };
 
   const handleClose = () => {
@@ -130,6 +143,8 @@ export function AddTaskModal({ visible, onClose, onAdd, editTask, onEdit }: AddT
         deadline: deadline.toISOString(),
         estimatedHours,
         labels: selectedLabels,
+        preferredDays,
+        canBeSplit,
       });
     } else {
       onAdd({
@@ -140,6 +155,8 @@ export function AddTaskModal({ visible, onClose, onAdd, editTask, onEdit }: AddT
         estimatedHours,
         labels: selectedLabels,
         isCompleted: false,
+        preferredDays,
+        canBeSplit,
       });
       reset();
     }
@@ -399,6 +416,66 @@ export function AddTaskModal({ visible, onClose, onAdd, editTask, onEdit }: AddT
             </View>
           </View>
 
+          {/* Preferred Days */}
+          <View style={[styles.field, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>PREFERRED DAYS</Text>
+            <View style={styles.preferredRow}>
+              {PREFERRED_DAYS_OPTIONS.map((opt) => {
+                const active = preferredDays === opt.key;
+                return (
+                  <Pressable
+                    key={opt.key}
+                    style={[
+                      styles.preferredBtn,
+                      {
+                        backgroundColor: active ? colors.primary + "18" : colors.muted,
+                        borderColor: active ? colors.primary : colors.border,
+                      },
+                    ]}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setPreferredDays(opt.key);
+                    }}
+                  >
+                    <Text style={[styles.preferredBtnLabel, { color: active ? colors.primary : colors.foreground }]}>
+                      {opt.label}
+                    </Text>
+                    <Text style={[styles.preferredBtnDesc, { color: active ? colors.primary + "cc" : colors.mutedForeground }]}>
+                      {opt.desc}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Can be split */}
+          <View style={[styles.field, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Pressable
+              style={styles.toggleRow}
+              onPress={() => {
+                Haptics.selectionAsync();
+                setCanBeSplit((v) => !v);
+              }}
+            >
+              <View style={styles.toggleInfo}>
+                <Text style={[styles.toggleLabel, { color: colors.foreground }]}>Can be split across sessions</Text>
+                <Text style={[styles.toggleDesc, { color: colors.mutedForeground }]}>
+                  If it can't fit in one slot, split it into multiple shorter blocks
+                </Text>
+              </View>
+              <View style={[
+                styles.toggle,
+                { backgroundColor: canBeSplit ? colors.primary : colors.border },
+              ]}>
+                <View style={[
+                  styles.toggleThumb,
+                  { transform: [{ translateX: canBeSplit ? 20 : 2 }] },
+                ]} />
+              </View>
+            </Pressable>
+          </View>
+
         </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
@@ -460,4 +537,25 @@ const styles = StyleSheet.create({
     minWidth: 56, alignItems: "center",
   },
   durationChipText: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  preferredRow: { flexDirection: "row", gap: 8 },
+  preferredBtn: {
+    flex: 1, paddingVertical: 10, paddingHorizontal: 8,
+    borderRadius: 12, borderWidth: 1.5, alignItems: "center", gap: 3,
+  },
+  preferredBtnLabel: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  preferredBtnDesc: { fontSize: 10, fontFamily: "Inter_400Regular", textAlign: "center" },
+  toggleRow: {
+    flexDirection: "row", alignItems: "center", gap: 16,
+  },
+  toggleInfo: { flex: 1, gap: 3 },
+  toggleLabel: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  toggleDesc: { fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 16 },
+  toggle: {
+    width: 44, height: 26, borderRadius: 13,
+    justifyContent: "center",
+  },
+  toggleThumb: {
+    width: 22, height: 22, borderRadius: 11,
+    backgroundColor: "#fff",
+  },
 });

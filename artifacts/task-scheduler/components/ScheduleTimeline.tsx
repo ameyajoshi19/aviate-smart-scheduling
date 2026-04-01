@@ -4,16 +4,11 @@ import { StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { Task } from "../context/AppContext";
+import { ScheduledTask } from "../utils/scheduler";
 import { useColors } from "../hooks/useColors";
 
-interface ScheduleEntry {
-  task: Task;
-  start: Date;
-  end: Date;
-}
-
 interface ScheduleTimelineProps {
-  scheduled: ScheduleEntry[];
+  scheduled: ScheduledTask[];
   unscheduled: Task[];
 }
 
@@ -60,41 +55,54 @@ export function ScheduleTimeline({ scheduled, unscheduled }: ScheduleTimelinePro
       {scheduled.length > 0 && (
         <>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Scheduled</Text>
-          {scheduled.map((entry, i) => (
-            <Animated.View
-              key={entry.task.id}
-              entering={FadeInDown.delay(i * 50).springify()}
-            >
-              <View
-                style={[
-                  styles.scheduleCard,
-                  { backgroundColor: colors.card, borderColor: colors.border },
-                ]}
+          {scheduled.map((entry, i) => {
+            const splitLabel =
+              entry.splitTotalParts && entry.splitTotalParts > 1 && entry.splitPartIndex
+                ? `Part ${entry.splitPartIndex}/${entry.splitTotalParts}`
+                : null;
+            return (
+              <Animated.View
+                key={entry.task.id + entry.start.getTime()}
+                entering={FadeInDown.delay(i * 50).springify()}
               >
-                <View style={[styles.timelineDot, { backgroundColor: colors.primary }]} />
                 <View
-                  style={[styles.timelineBar, { backgroundColor: colors.primary + "30" }]}
-                />
-                <View style={styles.scheduleContent}>
-                  <Text style={[styles.scheduleTitle, { color: colors.foreground }]}>
-                    {entry.task.title}
-                  </Text>
-                  <View style={styles.scheduleMeta}>
-                    <View style={[styles.dot, { backgroundColor: priorityColor(entry.task.priority) }]} />
-                    <Text style={[styles.scheduleTime, { color: colors.mutedForeground }]}>
-                      {formatDateTime(entry.start)}
-                    </Text>
-                    <Text style={[styles.scheduleDuration, { color: colors.primary }]}>
-                      {formatDuration(entry.start, entry.end)}
-                    </Text>
+                  style={[
+                    styles.scheduleCard,
+                    { backgroundColor: colors.card, borderColor: colors.border },
+                  ]}
+                >
+                  <View style={[styles.timelineDot, { backgroundColor: colors.primary }]} />
+                  <View
+                    style={[styles.timelineBar, { backgroundColor: colors.primary + "30" }]}
+                  />
+                  <View style={styles.scheduleContent}>
+                    <View style={styles.titleRow}>
+                      <Text style={[styles.scheduleTitle, { color: colors.foreground }]}>
+                        {entry.task.title}
+                      </Text>
+                      {splitLabel && (
+                        <View style={[styles.splitBadge, { backgroundColor: colors.primary + "18", borderColor: colors.primary + "40" }]}>
+                          <Text style={[styles.splitBadgeText, { color: colors.primary }]}>{splitLabel}</Text>
+                        </View>
+                      )}
+                    </View>
+                    <View style={styles.scheduleMeta}>
+                      <View style={[styles.dot, { backgroundColor: priorityColor(entry.task.priority) }]} />
+                      <Text style={[styles.scheduleTime, { color: colors.mutedForeground }]}>
+                        {formatDateTime(entry.start)}
+                      </Text>
+                      <Text style={[styles.scheduleDuration, { color: colors.primary }]}>
+                        {formatDuration(entry.start, entry.end)}
+                      </Text>
+                    </View>
                   </View>
+                  {entry.task.googleEventId && (
+                    <Calendar size={14} color={colors.primary} style={styles.calIcon} />
+                  )}
                 </View>
-                {entry.task.googleEventId && (
-                  <Calendar size={14} color={colors.primary} style={styles.calIcon} />
-                )}
-              </View>
-            </Animated.View>
-          ))}
+              </Animated.View>
+            );
+          })}
         </>
       )}
 
@@ -165,8 +173,25 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 4,
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+  },
   scheduleTitle: {
     fontSize: 15,
+    fontFamily: "Inter_600SemiBold",
+    flexShrink: 1,
+  },
+  splitBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  splitBadgeText: {
+    fontSize: 10,
     fontFamily: "Inter_600SemiBold",
   },
   scheduleMeta: {

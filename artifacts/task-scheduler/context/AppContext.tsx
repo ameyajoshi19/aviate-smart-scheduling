@@ -8,6 +8,7 @@ import React, {
 } from "react";
 
 export type Priority = "high" | "medium" | "low";
+export type PreferredDays = "weekdays" | "weekends" | "any";
 
 export interface Task {
   id: string;
@@ -18,6 +19,8 @@ export interface Task {
   estimatedHours: number;
   labels: string[];
   isCompleted: boolean;
+  preferredDays?: PreferredDays;
+  canBeSplit?: boolean;
   scheduledStart?: string;
   scheduledEnd?: string;
   googleEventId?: string;
