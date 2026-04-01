@@ -15,8 +15,7 @@ import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
-
-export const SKIP_AUTH_KEY = "@skip_auth";
+import { SKIP_AUTH_KEY } from "@/constants/auth";
 
 function GoogleLogo() {
   return (
@@ -33,13 +32,17 @@ export default function StartupScreen() {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    AsyncStorage.getItem(SKIP_AUTH_KEY).then((val) => {
-      if (val === "1") {
-        router.replace("/(tabs)");
-      } else {
+    AsyncStorage.getItem(SKIP_AUTH_KEY)
+      .then((val) => {
+        if (val === "1") {
+          router.replace("/(tabs)");
+        } else {
+          setChecking(false);
+        }
+      })
+      .catch(() => {
         setChecking(false);
-      }
-    });
+      });
   }, []);
 
   const handleContinueWithout = async () => {

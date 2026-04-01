@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 
-import { SKIP_AUTH_KEY } from "@/app/index";
+import { SKIP_AUTH_KEY } from "@/constants/auth";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
