@@ -15,14 +15,16 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.replit.taskscheduler"
+      "bundleIdentifier": "com.aviate.app"
     },
     "android": {
-      "package": "com.replit.taskscheduler",
+      "package": "com.aviate.app",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon.png",
-        "backgroundColor": "#0d0d1a"
-      }
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#1A2D4F"
+      },
+      "permissions": []
     },
     "web": {
       "favicon": "./assets/images/icon.png"
