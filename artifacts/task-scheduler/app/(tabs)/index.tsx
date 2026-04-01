@@ -347,7 +347,9 @@ export default function TasksScreen() {
           if (allDone) {
             return (
               <View style={styles.emptyState}>
-                <Text style={styles.celebrationEmoji}>🎉</Text>
+                <View style={[styles.celebrationIconWrap, { backgroundColor: colors.success + "18" }]}>
+                  <SquareCheckBig size={40} color={colors.success} />
+                </View>
                 <Text style={[styles.emptyTitle, { color: colors.success }]}>All tasks complete!</Text>
                 <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
                   Outstanding work — you've cleared every task. Add new ones whenever you're ready.
@@ -492,7 +494,7 @@ const styles = StyleSheet.create({
   sheetDoneText: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
   listContent: { paddingHorizontal: 20, paddingTop: 6 },
   emptyState: { alignItems: "center", paddingTop: 80, gap: 12 },
-  celebrationEmoji: { fontSize: 48 },
+  celebrationIconWrap: { width: 72, height: 72, borderRadius: 24, alignItems: "center", justifyContent: "center" },
   emptyTitle: { fontSize: 18, fontFamily: "Inter_600SemiBold" },
   emptyText: {
     fontSize: 14, fontFamily: "Inter_400Regular",
