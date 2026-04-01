@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CalendarView } from "@/components/CalendarView";
 import { RescheduleModal } from "@/components/RescheduleModal";
 import { ScheduleTimeline } from "@/components/ScheduleTimeline";
-import { Task, useApp } from "@/context/AppContext";
+import { ScheduledBlock, Task, useApp } from "@/context/AppContext";
 import { useCalendar } from "@/context/CalendarContext";
 import { useColors } from "@/hooks/useColors";
 import { scheduleTasks, ScheduledTask } from "@/utils/scheduler";
@@ -57,20 +57,30 @@ export default function ScheduleScreen() {
     [scheduled]
   );
 
-  const appliedTasks = useMemo(() =>
-    tasks.filter((t) => !t.isCompleted && t.scheduledStart),
-    [tasks]
-  );
-  const appliedEntries = useMemo((): ScheduledTask[] =>
-    appliedTasks
-      .map((t) => ({
-        task: t,
-        start: new Date(t.scheduledStart!),
-        end: new Date(t.scheduledEnd!),
-      }))
-      .sort((a, b) => a.start.getTime() - b.start.getTime()),
-    [appliedTasks]
-  );
+  const appliedEntries = useMemo((): ScheduledTask[] => {
+    const entries: ScheduledTask[] = [];
+    for (const t of tasks) {
+      if (t.isCompleted || !t.scheduledStart) continue;
+      if (t.scheduledBlocks && t.scheduledBlocks.length > 0) {
+        for (const block of t.scheduledBlocks) {
+          entries.push({
+            task: t,
+            start: new Date(block.start),
+            end: new Date(block.end),
+            splitPartIndex: block.splitPartIndex,
+            splitTotalParts: block.splitTotalParts,
+          });
+        }
+      } else {
+        entries.push({
+          task: t,
+          start: new Date(t.scheduledStart),
+          end: new Date(t.scheduledEnd!),
+        });
+      }
+    }
+    return entries.sort((a, b) => a.start.getTime() - b.start.getTime());
+  }, [tasks]);
 
   const completedEntries = useMemo((): ScheduledTask[] =>
     tasks
@@ -88,28 +98,66 @@ export default function ScheduleScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setIsScheduling(true);
     try {
-      const updateList: Array<{ id: string; updates: Partial<Task> }> = [];
+      const taskUpdateMap = new Map<string, Partial<Task>>();
+
       for (const entry of scheduled) {
-        const updates: Partial<Task> = {
-          scheduledStart: entry.start.toISOString(),
-          scheduledEnd: entry.end.toISOString(),
-        };
+        const isSplit = !!(entry.splitTotalParts && entry.splitTotalParts > 1);
+        const existing = taskUpdateMap.get(entry.task.id);
+
+        let googleEventId: string | undefined;
         if (isConnected) {
-          const eventId = await createEvent({
-            title: `[Task] ${entry.task.title}`,
+          const suffix = isSplit && entry.splitPartIndex
+            ? ` (Part ${entry.splitPartIndex}/${entry.splitTotalParts})`
+            : "";
+          const eid = await createEvent({
+            title: `[Task] ${entry.task.title}${suffix}`,
             start: entry.start.toISOString(),
             end: entry.end.toISOString(),
             description: entry.task.description || undefined,
           });
-          if (eventId) updates.googleEventId = eventId;
+          if (eid) googleEventId = eid;
         }
-        updateList.push({ id: entry.task.id, updates });
+
+        if (isSplit) {
+          const newBlock: ScheduledBlock = {
+            start: entry.start.toISOString(),
+            end: entry.end.toISOString(),
+            splitPartIndex: entry.splitPartIndex!,
+            splitTotalParts: entry.splitTotalParts!,
+          };
+          if (!existing) {
+            taskUpdateMap.set(entry.task.id, {
+              scheduledStart: entry.start.toISOString(),
+              scheduledEnd: entry.end.toISOString(),
+              scheduledBlocks: [newBlock],
+              ...(googleEventId ? { googleEventId } : {}),
+            });
+          } else {
+            const blocks = existing.scheduledBlocks ?? [];
+            taskUpdateMap.set(entry.task.id, {
+              ...existing,
+              scheduledEnd: entry.end.toISOString(),
+              scheduledBlocks: [...blocks, newBlock],
+            });
+          }
+        } else {
+          taskUpdateMap.set(entry.task.id, {
+            scheduledStart: entry.start.toISOString(),
+            scheduledEnd: entry.end.toISOString(),
+            scheduledBlocks: undefined,
+            ...(googleEventId ? { googleEventId } : {}),
+          });
+        }
       }
+
+      const updateList = Array.from(taskUpdateMap.entries()).map(([id, updates]) => ({ id, updates }));
       await batchUpdateTasks(updateList);
+
+      const taskCount = updateList.length;
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert(
         "Schedule Applied",
-        `${scheduled.length} task${scheduled.length !== 1 ? "s" : ""} have been scheduled${isConnected ? " and added to your Google Calendar" : ""}!`,
+        `${taskCount} task${taskCount !== 1 ? "s" : ""} have been scheduled${isConnected ? " and added to your Google Calendar" : ""}!`,
         [{ text: "OK" }]
       );
     } catch (e) {

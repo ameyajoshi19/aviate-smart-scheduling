@@ -10,6 +10,13 @@ import React, {
 export type Priority = "high" | "medium" | "low";
 export type PreferredDays = "weekdays" | "weekends" | "any";
 
+export interface ScheduledBlock {
+  start: string;
+  end: string;
+  splitPartIndex: number;
+  splitTotalParts: number;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -23,6 +30,7 @@ export interface Task {
   canBeSplit?: boolean;
   scheduledStart?: string;
   scheduledEnd?: string;
+  scheduledBlocks?: ScheduledBlock[];
   googleEventId?: string;
   createdAt: string;
 }

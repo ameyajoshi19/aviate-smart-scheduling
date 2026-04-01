@@ -20,7 +20,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AddTaskModal } from "@/components/AddTaskModal";
 import { RescheduleModal } from "@/components/RescheduleModal";
 import { TaskCard } from "@/components/TaskCard";
-import { Task, useApp } from "@/context/AppContext";
+import { ScheduledBlock, Task, useApp } from "@/context/AppContext";
 import { useCalendar } from "@/context/CalendarContext";
 import { useColors } from "@/hooks/useColors";
 import { findNewSlotForTask, scheduleTasks } from "@/utils/scheduler";
@@ -80,11 +80,31 @@ export default function TasksScreen() {
     const tempId = "__new_task__";
     const tempTask: Task = { ...taskData, id: tempId, createdAt: new Date().toISOString() };
     const proposal = scheduleTasks([...tasks, tempTask], availability, events);
-    const slot = proposal.find((s) => s.task.id === tempId);
+    const parts = proposal.filter((s) => s.task.id === tempId);
+
+    let scheduledStart: string | undefined;
+    let scheduledEnd: string | undefined;
+    let scheduledBlocks: ScheduledBlock[] | undefined;
+
+    if (parts.length === 1 && !parts[0].splitTotalParts) {
+      scheduledStart = parts[0].start.toISOString();
+      scheduledEnd = parts[0].end.toISOString();
+    } else if (parts.length > 1) {
+      scheduledStart = parts[0].start.toISOString();
+      scheduledEnd = parts[parts.length - 1].end.toISOString();
+      scheduledBlocks = parts.map((p, i) => ({
+        start: p.start.toISOString(),
+        end: p.end.toISOString(),
+        splitPartIndex: p.splitPartIndex ?? i + 1,
+        splitTotalParts: p.splitTotalParts ?? parts.length,
+      }));
+    }
+
     await addTask({
       ...taskData,
-      scheduledStart: slot?.start.toISOString(),
-      scheduledEnd: slot?.end.toISOString(),
+      scheduledStart,
+      scheduledEnd,
+      ...(scheduledBlocks ? { scheduledBlocks } : {}),
     });
   };
 
