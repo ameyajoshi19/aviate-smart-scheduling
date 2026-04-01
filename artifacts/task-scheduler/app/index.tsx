@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Platform,
   Pressable,
   StyleSheet,
@@ -13,10 +14,11 @@ import {
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AviateLogoIcon } from "@/components/AviateLogoIcon";
 import { SKIP_AUTH_KEY } from "@/constants/auth";
 
 const NAVY = "#1A2D4F";
+const BORDER = "#dde3ee";
+const MUTED = "#6b7a99";
 
 function GoogleLogo() {
   return (
@@ -77,24 +79,21 @@ export default function StartupScreen() {
       style={[
         styles.container,
         {
-          backgroundColor: "#f5f7fa",
           paddingTop: Math.max(insets.top, 40),
           paddingBottom: Math.max(insets.bottom, 24),
         },
       ]}
     >
-      {/* Logo & branding */}
+      {/* Logo image */}
       <Animated.View entering={FadeInDown.duration(600).springify()} style={styles.brandSection}>
-        <View style={styles.iconOuter}>
-          <View style={styles.iconInner}>
-            <AviateLogoIcon size={68} color="#ffffff" />
-          </View>
+        <View style={styles.logoCard}>
+          <Image
+            source={require("../assets/aviate-logo.png")}
+            style={styles.logo}
+            resizeMode="cover"
+          />
         </View>
-
-        <Text style={styles.appName}>AVIATE</Text>
-        <Text style={styles.tagline}>
-          Smart scheduling, perfectly prioritized
-        </Text>
+        <Text style={styles.tagline}>Smart scheduling, perfectly prioritized</Text>
       </Animated.View>
 
       <View style={styles.spacer} />
@@ -145,10 +144,6 @@ export default function StartupScreen() {
   );
 }
 
-const BORDER = "#dde3ee";
-const MUTED = "#6b7a99";
-const CARD = "#ffffff";
-
 const styles = StyleSheet.create({
   loading: {
     flex: 1,
@@ -158,41 +153,32 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
+    backgroundColor: "#f5f7fa",
   },
   brandSection: {
     alignItems: "center",
-    gap: 16,
+    gap: 20,
     paddingTop: 60,
+    paddingHorizontal: 28,
   },
-  iconOuter: {
-    width: 124,
-    height: 124,
-    borderRadius: 38,
-    backgroundColor: "rgba(26,45,79,0.1)",
-    alignItems: "center",
-    justifyContent: "center",
+  logoCard: {
+    borderRadius: 24,
+    overflow: "hidden",
+    shadowColor: "#1A2D4F",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.10,
+    shadowRadius: 16,
+    elevation: 4,
   },
-  iconInner: {
-    width: 92,
-    height: 92,
-    borderRadius: 28,
-    backgroundColor: NAVY,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  appName: {
-    fontSize: 34,
-    fontFamily: "Inter_700Bold",
-    color: NAVY,
-    letterSpacing: 10,
-    marginTop: 10,
+  logo: {
+    width: 300,
+    height: 180,
   },
   tagline: {
     fontSize: 15,
     fontFamily: "Inter_400Regular",
     color: MUTED,
     textAlign: "center",
-    maxWidth: 260,
     lineHeight: 22,
   },
   spacer: {
@@ -212,7 +198,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 16,
     borderWidth: 1.5,
-    backgroundColor: CARD,
+    backgroundColor: "#ffffff",
     borderColor: BORDER,
   },
   googleBtnText: {
