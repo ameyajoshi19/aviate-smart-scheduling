@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Calendar, RefreshCw, Link2Off, Link, List, Clock, Zap, LogOut } from "lucide-react-native";
+import { Calendar, RefreshCw, Link2Off, Link, List, Clock, Zap, LogOut, Shield, FileText, ChevronRight } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
+import * as WebBrowser from "expo-web-browser";
 import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
 import {
@@ -17,6 +18,7 @@ import {
 import { useRouter } from "expo-router";
 
 import { SKIP_AUTH_KEY } from "@/constants/auth";
+import { PRIVACY_URL, TERMS_URL } from "@/constants/legal";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -261,6 +263,50 @@ export default function SettingsScreen() {
                   Return to the welcome screen
                 </Text>
               </View>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+
+        {/* LEGAL */}
+        <Animated.View entering={FadeInDown.delay(300).duration(400)}>
+          <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>LEGAL</Text>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.selectionAsync();
+                WebBrowser.openBrowserAsync(PRIVACY_URL);
+              }}
+              style={[styles.howRow, { borderBottomWidth: 1, borderBottomColor: colors.border }]}
+            >
+              <View style={[styles.howIcon, { backgroundColor: colors.accent }]}>
+                <Shield size={16} color={colors.primary} />
+              </View>
+              <View style={styles.howText}>
+                <Text style={[styles.howTitle, { color: colors.foreground }]}>Privacy Policy</Text>
+                <Text style={[styles.howDesc, { color: colors.mutedForeground }]}>
+                  How we handle your data
+                </Text>
+              </View>
+              <ChevronRight size={16} color={colors.mutedForeground} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.selectionAsync();
+                WebBrowser.openBrowserAsync(TERMS_URL);
+              }}
+              style={[styles.howRow, { borderBottomWidth: 0 }]}
+            >
+              <View style={[styles.howIcon, { backgroundColor: colors.accent }]}>
+                <FileText size={16} color={colors.primary} />
+              </View>
+              <View style={styles.howText}>
+                <Text style={[styles.howTitle, { color: colors.foreground }]}>Terms of Service</Text>
+                <Text style={[styles.howDesc, { color: colors.mutedForeground }]}>
+                  Rules for using Aviate
+                </Text>
+              </View>
+              <ChevronRight size={16} color={colors.mutedForeground} />
             </TouchableOpacity>
           </View>
         </Animated.View>

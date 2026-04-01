@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as WebBrowser from "expo-web-browser";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -15,6 +16,7 @@ import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SKIP_AUTH_KEY } from "@/constants/auth";
+import { PRIVACY_URL, TERMS_URL } from "@/constants/legal";
 
 const NAVY = "#1A2D4F";
 const BORDER = "#dde3ee";
@@ -133,9 +135,15 @@ export default function StartupScreen() {
         {/* Terms */}
         <Text style={styles.terms}>
           {"By continuing you agree to our "}
-          <Text style={{ color: NAVY }}>Terms of Service</Text>
+          <Text
+            style={{ color: NAVY }}
+            onPress={() => WebBrowser.openBrowserAsync(TERMS_URL)}
+          >Terms of Service</Text>
           {" and "}
-          <Text style={{ color: NAVY }}>Privacy Policy</Text>
+          <Text
+            style={{ color: NAVY }}
+            onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL)}
+          >Privacy Policy</Text>
           {"."}
         </Text>
       </Animated.View>
