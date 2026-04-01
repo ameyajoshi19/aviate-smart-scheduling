@@ -141,6 +141,7 @@ export default function TasksScreen() {
     await updateTask(taskId, {
       scheduledStart: start.toISOString(),
       scheduledEnd: end.toISOString(),
+      scheduledBlocks: undefined,
     });
     setRescheduleTask(null);
   };

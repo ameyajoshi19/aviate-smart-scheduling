@@ -252,9 +252,12 @@ export function CalendarView({ scheduledEntries, completedEntries = [], onResche
                             borderLeftColor: colors.success + "80",
                           }]}
                         >
-                          <Text style={[styles.taskBlockTitle, { color: colors.mutedForeground, textDecorationLine: "line-through" }]} numberOfLines={2}>
-                            {entry.task.title}
-                          </Text>
+                          <View style={styles.taskBlockDoneRow}>
+                            <CircleCheckBig size={8} color={colors.success} />
+                            <Text style={[styles.taskBlockTitle, { color: colors.mutedForeground, textDecorationLine: "line-through", flex: 1 }]} numberOfLines={1}>
+                              {entry.task.title}
+                            </Text>
+                          </View>
                         </View>
                       ))}
                     </>
@@ -369,6 +372,7 @@ const styles = StyleSheet.create({
     padding: 6, gap: 2,
   },
   taskBlockDone: { opacity: 0.6 },
+  taskBlockDoneRow: { flexDirection: "row", alignItems: "center", gap: 4 },
   taskBlockTitle: { fontSize: 11, fontFamily: "Inter_600SemiBold", lineHeight: 14 },
   taskBlockTime: { fontSize: 10, fontFamily: "Inter_400Regular" },
   listSection: { gap: 8 },

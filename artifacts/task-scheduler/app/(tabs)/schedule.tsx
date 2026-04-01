@@ -82,17 +82,30 @@ export default function ScheduleScreen() {
     return entries.sort((a, b) => a.start.getTime() - b.start.getTime());
   }, [tasks]);
 
-  const completedEntries = useMemo((): ScheduledTask[] =>
-    tasks
-      .filter((t) => t.isCompleted && t.scheduledStart && t.scheduledEnd)
-      .map((t) => ({
-        task: t,
-        start: new Date(t.scheduledStart!),
-        end: new Date(t.scheduledEnd!),
-      }))
-      .sort((a, b) => a.start.getTime() - b.start.getTime()),
-    [tasks]
-  );
+  const completedEntries = useMemo((): ScheduledTask[] => {
+    const entries: ScheduledTask[] = [];
+    for (const t of tasks) {
+      if (!t.isCompleted || !t.scheduledStart) continue;
+      if (t.scheduledBlocks && t.scheduledBlocks.length > 0) {
+        for (const block of t.scheduledBlocks) {
+          entries.push({
+            task: t,
+            start: new Date(block.start),
+            end: new Date(block.end),
+            splitPartIndex: block.splitPartIndex,
+            splitTotalParts: block.splitTotalParts,
+          });
+        }
+      } else {
+        entries.push({
+          task: t,
+          start: new Date(t.scheduledStart),
+          end: new Date(t.scheduledEnd!),
+        });
+      }
+    }
+    return entries.sort((a, b) => a.start.getTime() - b.start.getTime());
+  }, [tasks]);
 
   const handleAutoSchedule = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -171,6 +184,7 @@ export default function ScheduleScreen() {
     await updateTask(taskId, {
       scheduledStart: start.toISOString(),
       scheduledEnd: end.toISOString(),
+      scheduledBlocks: undefined,
     });
     setRescheduleTask(null);
   };
