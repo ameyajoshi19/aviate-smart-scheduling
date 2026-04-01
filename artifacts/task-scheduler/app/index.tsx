@@ -86,13 +86,12 @@ export default function StartupScreen() {
     >
       {/* Logo image */}
       <Animated.View entering={FadeInDown.duration(600).springify()} style={styles.brandSection}>
-        <View style={styles.logoCard}>
-          <Image
-            source={require("../assets/aviate-logo.png")}
-            style={styles.logo}
-            resizeMode="cover"
-          />
-        </View>
+        <Image
+          source={require("../assets/aviate-icon.png")}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <Text style={styles.wordmark}>AVIATE</Text>
         <Text style={styles.tagline}>Smart scheduling, perfectly prioritized</Text>
       </Animated.View>
 
@@ -161,18 +160,16 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: 28,
   },
-  logoCard: {
-    borderRadius: 24,
-    overflow: "hidden",
-    shadowColor: "#1A2D4F",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.10,
-    shadowRadius: 16,
-    elevation: 4,
-  },
   logo: {
-    width: 300,
-    height: 180,
+    width: 180,
+    height: 116,
+  },
+  wordmark: {
+    fontSize: 32,
+    fontFamily: "Inter_700Bold",
+    color: NAVY,
+    letterSpacing: 10,
+    marginTop: -4,
   },
   tagline: {
     fontSize: 15,
