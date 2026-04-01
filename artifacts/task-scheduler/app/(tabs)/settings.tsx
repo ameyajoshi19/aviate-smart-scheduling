@@ -1,4 +1,5 @@
-import { Feather } from "@expo/vector-icons";
+import { Calendar, RefreshCw, Link2Off, Link, List, Clock, Zap } from "lucide-react-native";
+import type { LucideIcon } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
 import {
@@ -88,7 +89,7 @@ export default function SettingsScreen() {
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.calendarHeader}>
               <View style={[styles.calendarIcon, { backgroundColor: colors.primary + "20" }]}>
-                <Feather name="calendar" size={22} color={colors.primary} />
+                <Calendar size={22} color={colors.primary} />
               </View>
               <View style={styles.calendarInfo}>
                 <Text style={[styles.calendarTitle, { color: colors.foreground }]}>Google Calendar</Text>
@@ -105,14 +106,14 @@ export default function SettingsScreen() {
                   style={[styles.secondaryBtn, { borderColor: colors.border, backgroundColor: colors.muted }]}
                   onPress={handleRefresh}
                 >
-                  <Feather name="refresh-cw" size={14} color={colors.foreground} />
+                  <RefreshCw size={14} color={colors.foreground} />
                   <Text style={[styles.secondaryBtnText, { color: colors.foreground }]}>Refresh</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.secondaryBtn, { borderColor: colors.destructive + "40", backgroundColor: colors.destructive + "10" }]}
                   onPress={handleDisconnect}
                 >
-                  <Feather name="link-2-off" size={14} color={colors.destructive} />
+                  <Link2Off size={14} color={colors.destructive} />
                   <Text style={[styles.secondaryBtnText, { color: colors.destructive }]}>Disconnect</Text>
                 </TouchableOpacity>
               </View>
@@ -126,7 +127,7 @@ export default function SettingsScreen() {
                   <ActivityIndicator color={colors.primaryForeground} size="small" />
                 ) : (
                   <>
-                    <Feather name="link" size={16} color={colors.primaryForeground} />
+                    <Link size={16} color={colors.primaryForeground} />
                     <Text style={[styles.connectBtnText, { color: colors.primaryForeground }]}>
                       Connect Google Calendar
                     </Text>
@@ -148,18 +149,18 @@ export default function SettingsScreen() {
         <Animated.View entering={FadeInDown.delay(200).duration(400)}>
           <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>HOW IT WORKS</Text>
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {[
-              { icon: "list", title: "Add your tasks", desc: "Enter title, priority, deadline, and estimated time" },
-              { icon: "clock", title: "Set your availability", desc: "Define which hours you're free each day of the week" },
-              { icon: "zap", title: "Auto-schedule", desc: "The algorithm schedules by priority & urgency, avoiding calendar conflicts" },
-              { icon: "calendar", title: "Calendar events", desc: "Creates Google Calendar events with the scheduled times" },
-            ].map((item, i) => (
+            {([
+              { Icon: List, title: "Add your tasks", desc: "Enter title, priority, deadline, and estimated time" },
+              { Icon: Clock, title: "Set your availability", desc: "Define which hours you're free each day of the week" },
+              { Icon: Zap, title: "Auto-schedule", desc: "The algorithm schedules by priority & urgency, avoiding calendar conflicts" },
+              { Icon: Calendar, title: "Calendar events", desc: "Creates Google Calendar events with the scheduled times" },
+            ] as { Icon: LucideIcon; title: string; desc: string }[]).map((item, i) => (
               <View
                 key={i}
                 style={[styles.howRow, i < 3 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}
               >
                 <View style={[styles.howIcon, { backgroundColor: colors.accent }]}>
-                  <Feather name={item.icon as any} size={16} color={colors.primary} />
+                  <item.Icon size={16} color={colors.primary} />
                 </View>
                 <View style={styles.howText}>
                   <Text style={[styles.howTitle, { color: colors.foreground }]}>{item.title}</Text>

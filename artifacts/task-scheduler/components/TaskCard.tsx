@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import { Clock, Trash2, Check, Calendar, CircleCheckBig } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import React, { useRef } from "react";
 import {
@@ -135,10 +135,10 @@ function CardContent({
                 {isWeb && !task.isCompleted && (
                   <>
                     <TouchableOpacity onPress={onReschedule} hitSlop={8} style={styles.webActionBtn}>
-                      <Feather name="clock" size={14} color={colors.primary} />
+                      <Clock size={14} color={colors.primary} />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={handleDelete} hitSlop={8} style={styles.webActionBtn}>
-                      <Feather name="trash-2" size={14} color={colors.destructive} />
+                      <Trash2 size={14} color={colors.destructive} />
                     </TouchableOpacity>
                   </>
                 )}
@@ -147,7 +147,7 @@ function CardContent({
                     borderColor: task.isCompleted ? colors.primary : colors.border,
                     backgroundColor: task.isCompleted ? colors.primary : "transparent",
                   }]}>
-                    {task.isCompleted && <Feather name="check" size={12} color={colors.primaryForeground} />}
+                    {task.isCompleted && <Check size={12} color={colors.primaryForeground} />}
                   </View>
                 </TouchableOpacity>
               </View>
@@ -180,13 +180,13 @@ function CardContent({
                 </Text>
               </View>
               <View style={styles.metaItem}>
-                <Feather name="clock" size={12} color={colors.mutedForeground} />
+                <Clock size={12} color={colors.mutedForeground} />
                 <Text style={[styles.metaText, { color: colors.mutedForeground }]}>
                   {formatDuration(task.estimatedHours)}
                 </Text>
               </View>
               <View style={styles.metaItem}>
-                <Feather name="calendar" size={12} color={isOverdue ? colors.destructive : colors.mutedForeground} />
+                <Calendar size={12} color={isOverdue ? colors.destructive : colors.mutedForeground} />
                 <Text style={[styles.metaText, { color: isOverdue ? colors.destructive : colors.mutedForeground }]}>
                   {formatDate(task.deadline)}
                 </Text>
@@ -195,14 +195,14 @@ function CardContent({
 
             {scheduledTime && !task.isCompleted && (
               <View style={[styles.scheduledBadge, { backgroundColor: colors.accent }]}>
-                <Feather name="check-circle" size={11} color={colors.accentForeground} />
+                <CircleCheckBig size={11} color={colors.accentForeground} />
                 <Text style={[styles.scheduledText, { color: colors.accentForeground }]}>{scheduledTime}</Text>
               </View>
             )}
 
             {task.googleEventId && (
               <View style={styles.calendarBadge}>
-                <Feather name="calendar" size={11} color={colors.primary} />
+                <Calendar size={11} color={colors.primary} />
                 <Text style={[styles.calendarText, { color: colors.primary }]}>Added to Google Calendar</Text>
               </View>
             )}

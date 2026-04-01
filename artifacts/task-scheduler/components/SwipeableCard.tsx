@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import { Clock, Trash2, Check, Calendar, CircleCheckBig } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import React, { useRef } from "react";
 import {
@@ -91,7 +91,7 @@ export function SwipeableCard({ task, onPress, onComplete, onDelete, onReschedul
     const s = dragX.interpolate({ inputRange: [0, 80], outputRange: [0.7, 1], extrapolate: "clamp" });
     return (
       <RNAnimated.View style={[styles.rescheduleAction, { transform: [{ scale: s }] }]}>
-        <Feather name="clock" size={22} color="#fff" />
+        <Clock size={22} color="#fff" />
         <Text style={styles.actionText}>Reschedule</Text>
       </RNAnimated.View>
     );
@@ -104,7 +104,7 @@ export function SwipeableCard({ task, onPress, onComplete, onDelete, onReschedul
     const s = dragX.interpolate({ inputRange: [-80, 0], outputRange: [1, 0.7], extrapolate: "clamp" });
     return (
       <RNAnimated.View style={[styles.deleteAction, { transform: [{ scale: s }] }]}>
-        <Feather name="trash-2" size={22} color="#fff" />
+        <Trash2 size={22} color="#fff" />
         <Text style={styles.actionText}>Delete</Text>
       </RNAnimated.View>
     );
@@ -165,7 +165,7 @@ export function SwipeableCard({ task, onPress, onComplete, onDelete, onReschedul
                       borderColor: task.isCompleted ? colors.primary : colors.border,
                       backgroundColor: task.isCompleted ? colors.primary : "transparent",
                     }]}>
-                      {task.isCompleted && <Feather name="check" size={12} color={colors.primaryForeground} />}
+                      {task.isCompleted && <Check size={12} color={colors.primaryForeground} />}
                     </View>
                   </TouchableOpacity>
                 </View>
@@ -197,13 +197,13 @@ export function SwipeableCard({ task, onPress, onComplete, onDelete, onReschedul
                     </Text>
                   </View>
                   <View style={styles.metaItem}>
-                    <Feather name="clock" size={12} color={colors.mutedForeground} />
+                    <Clock size={12} color={colors.mutedForeground} />
                     <Text style={[styles.metaText, { color: colors.mutedForeground }]}>
                       {formatDuration(task.estimatedHours)}
                     </Text>
                   </View>
                   <View style={styles.metaItem}>
-                    <Feather name="calendar" size={12} color={isOverdue ? colors.destructive : colors.mutedForeground} />
+                    <Calendar size={12} color={isOverdue ? colors.destructive : colors.mutedForeground} />
                     <Text style={[styles.metaText, { color: isOverdue ? colors.destructive : colors.mutedForeground }]}>
                       {formatDate(task.deadline)}
                     </Text>
@@ -212,14 +212,14 @@ export function SwipeableCard({ task, onPress, onComplete, onDelete, onReschedul
 
                 {scheduledTime && !task.isCompleted && (
                   <View style={[styles.scheduledBadge, { backgroundColor: colors.accent }]}>
-                    <Feather name="check-circle" size={11} color={colors.accentForeground} />
+                    <CircleCheckBig size={11} color={colors.accentForeground} />
                     <Text style={[styles.scheduledText, { color: colors.accentForeground }]}>{scheduledTime}</Text>
                   </View>
                 )}
 
                 {task.googleEventId && (
                   <View style={styles.calendarBadge}>
-                    <Feather name="calendar" size={11} color={colors.primary} />
+                    <Calendar size={11} color={colors.primary} />
                     <Text style={[styles.calendarText, { color: colors.primary }]}>Added to Google Calendar</Text>
                   </View>
                 )}

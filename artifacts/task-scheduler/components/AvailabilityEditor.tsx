@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import { X, Sunrise, ArrowRight, Sunset, Trash2, Plus } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
 import {
@@ -57,7 +57,7 @@ function TimePickerModal({ visible, title, selected, minHour = 0, onSelect, onCl
           <View style={[styles.pickerHeader, { borderBottomColor: colors.border }]}>
             <Text style={[styles.pickerTitle, { color: colors.foreground }]}>{title}</Text>
             <TouchableOpacity onPress={onClose}>
-              <Feather name="x" size={20} color={colors.mutedForeground} />
+              <X size={20} color={colors.mutedForeground} />
             </TouchableOpacity>
           </View>
           <ScrollView contentContainerStyle={styles.pickerGrid} showsVerticalScrollIndicator={false}>
@@ -107,19 +107,19 @@ function TimeSlotRow({ slot, onChangeStart, onChangeEnd, onRemove, canRemove }: 
         style={[styles.timeField, { backgroundColor: colors.accent, borderColor: colors.primary + "50" }]}
         onPress={() => { Haptics.selectionAsync(); setShowStart(true); }}
       >
-        <Feather name="sunrise" size={13} color={colors.primary} />
+        <Sunrise size={13} color={colors.primary} />
         <Text style={[styles.timeFieldText, { color: colors.primary }]}>
           {formatHour(slot.startHour)}
         </Text>
       </TouchableOpacity>
 
-      <Feather name="arrow-right" size={14} color={colors.mutedForeground} />
+      <ArrowRight size={14} color={colors.mutedForeground} />
 
       <TouchableOpacity
         style={[styles.timeField, { backgroundColor: colors.accent, borderColor: colors.primary + "50" }]}
         onPress={() => { Haptics.selectionAsync(); setShowEnd(true); }}
       >
-        <Feather name="sunset" size={13} color={colors.primary} />
+        <Sunset size={13} color={colors.primary} />
         <Text style={[styles.timeFieldText, { color: colors.primary }]}>
           {formatHour(slot.endHour)}
         </Text>
@@ -127,7 +127,7 @@ function TimeSlotRow({ slot, onChangeStart, onChangeEnd, onRemove, canRemove }: 
 
       {canRemove && (
         <TouchableOpacity onPress={onRemove} hitSlop={8}>
-          <Feather name="trash-2" size={15} color={colors.destructive} />
+          <Trash2 size={15} color={colors.destructive} />
         </TouchableOpacity>
       )}
 
@@ -247,7 +247,7 @@ export function AvailabilityEditor({ availability, onChange }: AvailabilityEdito
                     style={[styles.addSlotBtn, { borderColor: colors.primary }]}
                     onPress={() => addSlot(day)}
                   >
-                    <Feather name="plus" size={13} color={colors.primary} />
+                    <Plus size={13} color={colors.primary} />
                     <Text style={[styles.addSlotText, { color: colors.primary }]}>Add slot</Text>
                   </TouchableOpacity>
                 )}

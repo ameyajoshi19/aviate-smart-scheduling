@@ -1,5 +1,5 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Feather } from "@expo/vector-icons";
+import { Check, X, Plus, Calendar } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
 import {
@@ -262,7 +262,7 @@ export function AddTaskModal({ visible, onClose, onAdd, editTask, onEdit }: AddT
                     ]}
                     onPress={() => toggleLabel(label)}
                   >
-                    {active && <Feather name="check" size={10} color="#fff" />}
+                    {active && <Check size={10} color="#fff" />}
                     <Text style={[styles.labelChipText, { color: active ? "#fff" : lc }]}>{label}</Text>
                   </Pressable>
                 );
@@ -281,10 +281,10 @@ export function AddTaskModal({ visible, onClose, onAdd, editTask, onEdit }: AddT
                     maxLength={20}
                   />
                   <TouchableOpacity onPress={handleAddNewLabel}>
-                    <Feather name="check" size={16} color={colors.primary} />
+                    <Check size={16} color={colors.primary} />
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => { setShowNewLabel(false); setNewLabelText(""); }}>
-                    <Feather name="x" size={16} color={colors.mutedForeground} />
+                    <X size={16} color={colors.mutedForeground} />
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -292,7 +292,7 @@ export function AddTaskModal({ visible, onClose, onAdd, editTask, onEdit }: AddT
                   style={[styles.addLabelChip, { borderColor: colors.border }]}
                   onPress={() => { Haptics.selectionAsync(); setShowNewLabel(true); }}
                 >
-                  <Feather name="plus" size={12} color={colors.mutedForeground} />
+                  <Plus size={12} color={colors.mutedForeground} />
                   <Text style={[styles.addLabelText, { color: colors.mutedForeground }]}>New</Text>
                 </Pressable>
               )}
@@ -304,7 +304,7 @@ export function AddTaskModal({ visible, onClose, onAdd, editTask, onEdit }: AddT
             <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>DEADLINE</Text>
             {Platform.OS === "web" ? (
               <View style={styles.dateRow}>
-                <Feather name="calendar" size={16} color={colors.primary} />
+                <Calendar size={16} color={colors.primary} />
                 {/* @ts-ignore – HTML input works via React Native Web */}
                 <input
                   type="date"
@@ -327,7 +327,7 @@ export function AddTaskModal({ visible, onClose, onAdd, editTask, onEdit }: AddT
               </View>
             ) : Platform.OS === "ios" ? (
               <View style={styles.dateRow}>
-                <Feather name="calendar" size={16} color={colors.primary} />
+                <Calendar size={16} color={colors.primary} />
                 <DateTimePicker
                   value={deadline}
                   mode="date"
@@ -340,7 +340,7 @@ export function AddTaskModal({ visible, onClose, onAdd, editTask, onEdit }: AddT
             ) : (
               <>
                 <TouchableOpacity style={styles.dateRow} onPress={() => setShowDatePicker(true)}>
-                  <Feather name="calendar" size={16} color={colors.primary} />
+                  <Calendar size={16} color={colors.primary} />
                   <Text style={[styles.dateText, { color: colors.foreground }]}>
                     {deadline.toLocaleDateString("en-US", {
                       weekday: "long", month: "long", day: "numeric", year: "numeric",

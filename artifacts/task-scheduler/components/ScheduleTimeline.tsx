@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import { Calendar } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -46,7 +46,7 @@ export function ScheduleTimeline({ scheduled, unscheduled }: ScheduleTimelinePro
   if (scheduled.length === 0 && unscheduled.length === 0) {
     return (
       <View style={styles.empty}>
-        <Feather name="calendar" size={32} color={colors.mutedForeground} />
+        <Calendar size={32} color={colors.mutedForeground} />
         <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No tasks to schedule</Text>
         <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
           Add tasks and set your availability to see your schedule
@@ -90,7 +90,7 @@ export function ScheduleTimeline({ scheduled, unscheduled }: ScheduleTimelinePro
                   </View>
                 </View>
                 {entry.task.googleEventId && (
-                  <Feather name="calendar" size={14} color={colors.primary} style={styles.calIcon} />
+                  <Calendar size={14} color={colors.primary} style={styles.calIcon} />
                 )}
               </View>
             </Animated.View>

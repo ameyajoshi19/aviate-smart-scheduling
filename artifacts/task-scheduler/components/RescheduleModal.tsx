@@ -1,5 +1,5 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Feather } from "@expo/vector-icons";
+import { Clock, Calendar, ChevronRight, ArrowRight } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
 import {
@@ -81,7 +81,7 @@ export function RescheduleModal({ task, visible, onClose, onReschedule }: Resche
               {task.title}
             </Text>
             <View style={styles.taskMeta}>
-              <Feather name="clock" size={13} color={colors.mutedForeground} />
+              <Clock size={13} color={colors.mutedForeground} />
               <Text style={[styles.taskDuration, { color: colors.mutedForeground }]}>
                 {formatDuration(task.estimatedHours)}
               </Text>
@@ -93,7 +93,7 @@ export function RescheduleModal({ task, visible, onClose, onReschedule }: Resche
             <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>NEW DATE</Text>
             {Platform.OS === "web" ? (
               <View style={styles.dateBtn}>
-                <Feather name="calendar" size={18} color={colors.primary} />
+                <Calendar size={18} color={colors.primary} />
                 {/* @ts-ignore – native HTML input works fine on web via React Native Web */}
                 <input
                   type="date"
@@ -116,7 +116,7 @@ export function RescheduleModal({ task, visible, onClose, onReschedule }: Resche
               </View>
             ) : Platform.OS === "ios" ? (
               <View style={styles.dateBtn}>
-                <Feather name="calendar" size={18} color={colors.primary} />
+                <Calendar size={18} color={colors.primary} />
                 <DateTimePicker
                   value={date}
                   mode="date"
@@ -129,11 +129,11 @@ export function RescheduleModal({ task, visible, onClose, onReschedule }: Resche
             ) : (
               <>
                 <TouchableOpacity style={styles.dateBtn} onPress={() => setShowDatePicker(true)}>
-                  <Feather name="calendar" size={18} color={colors.primary} />
+                  <Calendar size={18} color={colors.primary} />
                   <Text style={[styles.dateBtnText, { color: colors.foreground }]}>
                     {date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
                   </Text>
-                  <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+                  <ChevronRight size={16} color={colors.mutedForeground} />
                 </TouchableOpacity>
                 {showDatePicker && (
                   <DateTimePicker
@@ -201,7 +201,7 @@ export function RescheduleModal({ task, visible, onClose, onReschedule }: Resche
           </View>
 
           <View style={[styles.endPreview, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-            <Feather name="arrow-right" size={14} color={colors.mutedForeground} />
+            <ArrowRight size={14} color={colors.mutedForeground} />
             <Text style={[styles.endPreviewText, { color: colors.mutedForeground }]}>
               Ends at{" "}
               {(() => {

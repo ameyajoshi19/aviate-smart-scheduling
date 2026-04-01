@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import { CircleCheckBig, Info, Zap, List, Calendar } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -134,11 +134,10 @@ export default function ScheduleScreen() {
             style={[styles.toggleBtn, viewMode === mode && { backgroundColor: colors.card, borderColor: colors.border }]}
             onPress={() => { Haptics.selectionAsync(); setViewMode(mode); }}
           >
-            <Feather
-              name={mode === "timeline" ? "list" : "calendar"}
-              size={14}
-              color={viewMode === mode ? colors.primary : colors.mutedForeground}
-            />
+            {mode === "timeline"
+              ? <List size={14} color={viewMode === mode ? colors.primary : colors.mutedForeground} />
+              : <Calendar size={14} color={viewMode === mode ? colors.primary : colors.mutedForeground} />
+            }
             <Text style={[styles.toggleText, { color: viewMode === mode ? colors.primary : colors.mutedForeground }]}>
               {mode === "timeline" ? "Timeline" : "Calendar"}
             </Text>
@@ -148,7 +147,7 @@ export default function ScheduleScreen() {
 
       {isConnected && (
         <View style={[styles.calendarBanner, { backgroundColor: colors.accent, borderColor: colors.border }]}>
-          <Feather name="check-circle" size={14} color={colors.primary} />
+          <CircleCheckBig size={14} color={colors.primary} />
           <Text style={[styles.calendarBannerText, { color: colors.accentForeground }]}>
             Google Calendar connected · {events.length} events loaded
           </Text>
@@ -157,7 +156,7 @@ export default function ScheduleScreen() {
 
       {!isConnected && (
         <View style={[styles.calendarBanner, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-          <Feather name="info" size={14} color={colors.mutedForeground} />
+          <Info size={14} color={colors.mutedForeground} />
           <Text style={[styles.calendarBannerText, { color: colors.mutedForeground }]}>
             Connect Google Calendar in Settings to avoid conflicts
           </Text>
@@ -195,7 +194,7 @@ export default function ScheduleScreen() {
                   <ActivityIndicator color={colors.primaryForeground} size="small" />
                 ) : (
                   <>
-                    <Feather name="zap" size={16} color={colors.primaryForeground} />
+                    <Zap size={16} color={colors.primaryForeground} />
                     <Text style={[styles.scheduleBtnText, { color: colors.primaryForeground }]}>
                       Apply Schedule{isConnected ? " & Create Calendar Events" : ""}
                     </Text>

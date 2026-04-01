@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import { ChevronLeft, ChevronRight, Calendar, Clock } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -115,7 +115,7 @@ export function CalendarView({ scheduledEntries, onReschedule }: CalendarViewPro
           style={[styles.navBtn, { backgroundColor: colors.muted }]}
           onPress={() => setWeekOffset((o) => o - 1)}
         >
-          <Feather name="chevron-left" size={18} color={colors.foreground} />
+          <ChevronLeft size={18} color={colors.foreground} />
         </Pressable>
         <View style={styles.weekLabelContainer}>
           <Text style={[styles.weekLabel, { color: colors.foreground }]}>{weekLabel}</Text>
@@ -129,7 +129,7 @@ export function CalendarView({ scheduledEntries, onReschedule }: CalendarViewPro
           style={[styles.navBtn, { backgroundColor: colors.muted }]}
           onPress={() => setWeekOffset((o) => o + 1)}
         >
-          <Feather name="chevron-right" size={18} color={colors.foreground} />
+          <ChevronRight size={18} color={colors.foreground} />
         </Pressable>
       </View>
 
@@ -177,7 +177,7 @@ export function CalendarView({ scheduledEntries, onReschedule }: CalendarViewPro
       {/* Task mini-grid — selected column gets a tinted background */}
       {entriesThisWeek.length === 0 ? (
         <View style={styles.emptyWeek}>
-          <Feather name="calendar" size={28} color={colors.mutedForeground} />
+          <Calendar size={28} color={colors.mutedForeground} />
           <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
             No tasks scheduled this week
           </Text>
@@ -259,7 +259,7 @@ export function CalendarView({ scheduledEntries, onReschedule }: CalendarViewPro
                     </Text>
                   </View>
                   <View style={styles.rescheduleHint}>
-                    <Feather name="clock" size={13} color={colors.primary} />
+                    <Clock size={13} color={colors.primary} />
                   </View>
                 </Pressable>
               );

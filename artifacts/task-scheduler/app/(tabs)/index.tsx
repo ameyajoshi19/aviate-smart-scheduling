@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import { CircleAlert, Plus, X, SlidersHorizontal, SquareCheckBig } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
 import {
@@ -137,7 +137,7 @@ export default function TasksScreen() {
           <Text style={[styles.title, { color: colors.foreground }]}>My Tasks</Text>
           {overduePending > 0 && (
             <View style={[styles.overdueBadge, { backgroundColor: colors.destructive + "22" }]}>
-              <Feather name="alert-circle" size={12} color={colors.destructive} />
+              <CircleAlert size={12} color={colors.destructive} />
               <Text style={[styles.overdueText, { color: colors.destructive }]}>{overduePending} overdue</Text>
             </View>
           )}
@@ -149,7 +149,7 @@ export default function TasksScreen() {
             setShowAdd(true);
           }}
         >
-          <Feather name="plus" size={22} color={colors.primaryForeground} />
+          <Plus size={22} color={colors.primaryForeground} />
         </TouchableOpacity>
       </Animated.View>
 
@@ -193,7 +193,7 @@ export default function TasksScreen() {
                   <Text style={[styles.activeChipText, { color: colors.primary }]}>
                     {PRIORITY_FILTERS.find((f) => f.key === priorityFilter)?.label}
                   </Text>
-                  <Feather name="x" size={11} color={colors.primary} />
+                  <X size={11} color={colors.primary} />
                 </Pressable>
               )}
               {labelFilter && (
@@ -203,7 +203,7 @@ export default function TasksScreen() {
                 >
                   <View style={[styles.labelDot, { backgroundColor: getLabelColor(labelFilter) }]} />
                   <Text style={[styles.activeChipText, { color: getLabelColor(labelFilter) }]}>{labelFilter}</Text>
-                  <Feather name="x" size={11} color={getLabelColor(labelFilter)} />
+                  <X size={11} color={getLabelColor(labelFilter)} />
                 </Pressable>
               )}
             </ScrollView>
@@ -214,7 +214,7 @@ export default function TasksScreen() {
               }]}
               onPress={() => { Haptics.selectionAsync(); setFilterSheetVisible(true); }}
             >
-              <Feather name="sliders" size={15} color={hasFilters ? colors.primary : colors.mutedForeground} />
+              <SlidersHorizontal size={15} color={hasFilters ? colors.primary : colors.mutedForeground} />
               {hasFilters && (
                 <View style={[styles.filterBadge, { backgroundColor: colors.primary }]}>
                   <Text style={styles.filterBadgeText}>{badgeCount}</Text>
@@ -319,7 +319,7 @@ export default function TasksScreen() {
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Feather name="check-square" size={40} color={colors.mutedForeground} />
+            <SquareCheckBig size={40} color={colors.mutedForeground} />
             <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
               {priorityFilter === "completed" ? "No completed tasks" : labelFilter ? `No tasks with "${labelFilter}"` : "No tasks yet"}
             </Text>
