@@ -1,6 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { Zap } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -14,8 +13,10 @@ import {
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useColors } from "@/hooks/useColors";
+import { AviateLogoIcon } from "@/components/AviateLogoIcon";
 import { SKIP_AUTH_KEY } from "@/constants/auth";
+
+const NAVY = "#1A2D4F";
 
 function GoogleLogo() {
   return (
@@ -26,7 +27,6 @@ function GoogleLogo() {
 }
 
 export default function StartupScreen() {
-  const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [checking, setChecking] = useState(true);
@@ -48,8 +48,7 @@ export default function StartupScreen() {
   const handleContinueWithout = async () => {
     try {
       await AsyncStorage.setItem(SKIP_AUTH_KEY, "1");
-    } catch {
-    }
+    } catch {}
     router.replace("/(tabs)");
   };
 
@@ -67,8 +66,8 @@ export default function StartupScreen() {
 
   if (checking) {
     return (
-      <View style={[styles.loading, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.primary} size="large" />
+      <View style={[styles.loading, { backgroundColor: "#f5f7fa" }]}>
+        <ActivityIndicator color={NAVY} size="large" />
       </View>
     );
   }
@@ -78,7 +77,7 @@ export default function StartupScreen() {
       style={[
         styles.container,
         {
-          backgroundColor: colors.background,
+          backgroundColor: "#f5f7fa",
           paddingTop: Math.max(insets.top, 40),
           paddingBottom: Math.max(insets.bottom, 24),
         },
@@ -86,14 +85,15 @@ export default function StartupScreen() {
     >
       {/* Logo & branding */}
       <Animated.View entering={FadeInDown.duration(600).springify()} style={styles.brandSection}>
-        <View style={[styles.iconOuter, { backgroundColor: colors.primary + "18" }]}>
-          <View style={[styles.iconInner, { backgroundColor: colors.primary }]}>
-            <Zap size={36} color="#ffffff" fill="#ffffff" />
+        <View style={styles.iconOuter}>
+          <View style={styles.iconInner}>
+            <AviateLogoIcon size={68} color="#ffffff" />
           </View>
         </View>
-        <Text style={[styles.appName, { color: colors.foreground }]}>APP NAME</Text>
-        <Text style={[styles.tagline, { color: colors.mutedForeground }]}>
-          Smart scheduling for everything that matters
+
+        <Text style={styles.appName}>AVIATE</Text>
+        <Text style={styles.tagline}>
+          Smart scheduling, perfectly prioritized
         </Text>
       </Animated.View>
 
@@ -102,65 +102,52 @@ export default function StartupScreen() {
       {/* Auth buttons */}
       <Animated.View
         entering={FadeInUp.delay(250).duration(500).springify()}
-        style={[styles.authSection, { paddingHorizontal: 28 }]}
+        style={styles.authSection}
       >
         {/* Google */}
-        <Pressable
-          style={[styles.authBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={handleGoogle}
-        >
+        <Pressable style={styles.googleBtn} onPress={handleGoogle}>
           <GoogleLogo />
-          <Text style={[styles.authBtnText, { color: colors.foreground }]}>
-            Continue with Google
-          </Text>
+          <Text style={styles.googleBtnText}>Continue with Google</Text>
           <View style={styles.authBtnSpacer} />
         </Pressable>
 
         {/* Apple — iOS only */}
         {Platform.OS === "ios" && (
-          <Pressable
-            style={[styles.authBtn, { backgroundColor: colors.foreground, borderColor: "transparent" }]}
-            onPress={handleApple}
-          >
-            <Text style={[styles.appleLogoText, { color: colors.background }]}>
-              {"\uF8FF"}
-            </Text>
-            <Text style={[styles.authBtnText, { color: colors.background }]}>
-              Continue with Apple
-            </Text>
+          <Pressable style={styles.appleBtn} onPress={handleApple}>
+            <Text style={styles.appleLogoText}>{"\uF8FF"}</Text>
+            <Text style={styles.appleBtnText}>Continue with Apple</Text>
             <View style={styles.authBtnSpacer} />
           </Pressable>
         )}
 
         {/* Divider */}
         <View style={styles.dividerRow}>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          <Text style={[styles.dividerText, { color: colors.mutedForeground }]}>or</Text>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>or</Text>
+          <View style={styles.dividerLine} />
         </View>
 
         {/* Guest */}
-        <Pressable
-          onPress={handleContinueWithout}
-          style={[styles.guestBtn, { borderColor: colors.border }]}
-        >
-          <Text style={[styles.guestText, { color: colors.mutedForeground }]}>
-            Continue without signing in
-          </Text>
+        <Pressable onPress={handleContinueWithout} style={styles.guestBtn}>
+          <Text style={styles.guestText}>Continue without signing in</Text>
         </Pressable>
 
         {/* Terms */}
-        <Text style={[styles.terms, { color: colors.mutedForeground }]}>
+        <Text style={styles.terms}>
           {"By continuing you agree to our "}
-          <Text style={{ color: colors.primary }}>Terms of Service</Text>
+          <Text style={{ color: NAVY }}>Terms of Service</Text>
           {" and "}
-          <Text style={{ color: colors.primary }}>Privacy Policy</Text>
+          <Text style={{ color: NAVY }}>Privacy Policy</Text>
           {"."}
         </Text>
       </Animated.View>
     </View>
   );
 }
+
+const BORDER = "#dde3ee";
+const MUTED = "#6b7a99";
+const CARD = "#ffffff";
 
 const styles = StyleSheet.create({
   loading: {
@@ -178,28 +165,32 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   iconOuter: {
-    width: 120,
-    height: 120,
-    borderRadius: 36,
+    width: 124,
+    height: 124,
+    borderRadius: 38,
+    backgroundColor: "rgba(26,45,79,0.1)",
     alignItems: "center",
     justifyContent: "center",
   },
   iconInner: {
-    width: 88,
-    height: 88,
-    borderRadius: 26,
+    width: 92,
+    height: 92,
+    borderRadius: 28,
+    backgroundColor: NAVY,
     alignItems: "center",
     justifyContent: "center",
   },
   appName: {
-    fontSize: 36,
+    fontSize: 34,
     fontFamily: "Inter_700Bold",
-    letterSpacing: -0.5,
-    marginTop: 8,
+    color: NAVY,
+    letterSpacing: 10,
+    marginTop: 10,
   },
   tagline: {
     fontSize: 15,
     fontFamily: "Inter_400Regular",
+    color: MUTED,
     textAlign: "center",
     maxWidth: 260,
     lineHeight: 22,
@@ -209,10 +200,11 @@ const styles = StyleSheet.create({
   },
   authSection: {
     width: "100%",
+    paddingHorizontal: 28,
     gap: 12,
     alignItems: "center",
   },
-  authBtn: {
+  googleBtn: {
     flexDirection: "row",
     alignItems: "center",
     width: "100%",
@@ -220,12 +212,37 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 16,
     borderWidth: 1.5,
+    backgroundColor: CARD,
+    borderColor: BORDER,
   },
-  authBtnText: {
+  googleBtnText: {
     flex: 1,
     textAlign: "center",
     fontSize: 16,
     fontFamily: "Inter_600SemiBold",
+    color: "#0a1628",
+  },
+  appleBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    backgroundColor: NAVY,
+  },
+  appleBtnText: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 16,
+    fontFamily: "Inter_600SemiBold",
+    color: "#ffffff",
+  },
+  appleLogoText: {
+    width: 28,
+    fontSize: 20,
+    textAlign: "center",
+    color: "#ffffff",
   },
   authBtnSpacer: {
     width: 28,
@@ -245,11 +262,6 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     color: "#4285F4",
   },
-  appleLogoText: {
-    width: 28,
-    fontSize: 20,
-    textAlign: "center",
-  },
   dividerRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -260,25 +272,30 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
+    backgroundColor: BORDER,
   },
   dividerText: {
     fontSize: 13,
     fontFamily: "Inter_400Regular",
+    color: MUTED,
   },
   guestBtn: {
     width: "100%",
     paddingVertical: 14,
     borderRadius: 16,
     borderWidth: 1,
+    borderColor: BORDER,
     alignItems: "center",
   },
   guestText: {
     fontSize: 15,
     fontFamily: "Inter_500Medium",
+    color: MUTED,
   },
   terms: {
     fontSize: 11,
     fontFamily: "Inter_400Regular",
+    color: MUTED,
     textAlign: "center",
     lineHeight: 16,
     maxWidth: 280,

@@ -1,17 +1,17 @@
 {
   "expo": {
-    "name": "Smart Task Scheduler",
-    "slug": "task-scheduler",
+    "name": "Aviate",
+    "slug": "aviate",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "task-scheduler",
+    "scheme": "aviate",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0d0d1a"
+      "backgroundColor": "#1A2D4F"
     },
     "ios": {
       "supportsTablet": false,

@@ -97,12 +97,23 @@ Utility scripts package. Each script is a `.ts` file in `src/` with a correspond
 
 ### `artifacts/task-scheduler` (`@workspace/task-scheduler`)
 
-Expo mobile app — Smart Task Scheduler. Features:
-- Task creation with priority (high/medium/low), deadline, estimated hours
+Expo mobile app — **Aviate** (smart task scheduler). App name: "Aviate", slug: "aviate".
+
+Branding:
+- Logo: geometric paper plane SVG (`components/AviateLogoIcon.tsx`), dark navy on navy-square icon
+- Color scheme: navy blue (`#1A2D4F` light, `#4A7FC2` dark mode primary) replacing old indigo/violet
+- Font: Inter, wide-spaced uppercase (letterSpacing: 10) for the "AVIATE" wordmark
+- Logo PNG asset: `assets/aviate-logo.png`
+
+Features:
+- Startup/auth screen (`app/index.tsx`) with Google/Apple sign-in stubs and guest mode (AsyncStorage `@skip_auth` flag)
+- Task creation with priority (high/medium/low), deadline, estimated hours, preferred days, "can be split" option
 - Weekly availability editor (per-day time slots)
 - Smart scheduling algorithm that sorts by priority + urgency, avoids calendar conflicts
 - Google Calendar integration (read events to avoid conflicts, create task events with reminders)
+- Light/Dark/Auto theme (ThemeContext + AsyncStorage persistence)
 - 4 tabs: Tasks, Schedule, Availability, Settings
+- Settings → ACCOUNT section with Sign Out (clears `@skip_auth`, returns to startup screen)
 
 **Google Calendar integration note:** The user dismissed the Replit Google Calendar OAuth integration flow. The app's Settings tab has a "Connect Google Calendar" button. To wire up real Google Calendar access, either:
 1. Have the user complete the Replit Google Calendar integration (connector ID: `connector:ccfg_google-calendar_DDDBAC03DE404369B74F32E78D`), then wire the OAuth token into the mobile app

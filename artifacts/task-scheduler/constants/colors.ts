@@ -1,25 +1,25 @@
 const colors = {
   light: {
-    text: "#0f0f1a",
-    tint: "#6366f1",
+    text: "#0a1628",
+    tint: "#1A2D4F",
 
-    background: "#f8f8fc",
-    foreground: "#0f0f1a",
+    background: "#f5f7fa",
+    foreground: "#0a1628",
 
     card: "#ffffff",
-    cardForeground: "#0f0f1a",
+    cardForeground: "#0a1628",
 
-    primary: "#6366f1",
+    primary: "#1A2D4F",
     primaryForeground: "#ffffff",
 
-    secondary: "#ede9fe",
-    secondaryForeground: "#4338ca",
+    secondary: "#e6ecf5",
+    secondaryForeground: "#1A2D4F",
 
-    muted: "#f1f0f7",
-    mutedForeground: "#8884a0",
+    muted: "#eef1f7",
+    mutedForeground: "#6b7a99",
 
-    accent: "#e0e7ff",
-    accentForeground: "#4338ca",
+    accent: "#d5e0f0",
+    accentForeground: "#1A2D4F",
 
     destructive: "#ef4444",
     destructiveForeground: "#ffffff",
@@ -30,8 +30,8 @@ const colors = {
     warning: "#f59e0b",
     warningForeground: "#ffffff",
 
-    border: "#e5e3f0",
-    input: "#e5e3f0",
+    border: "#dde3ee",
+    input: "#dde3ee",
 
     priorityHigh: "#ef4444",
     priorityMedium: "#f59e0b",
@@ -39,30 +39,30 @@ const colors = {
 
     calendarBusy: "#f87171",
     calendarFree: "#86efac",
-    taskScheduled: "#818cf8",
+    taskScheduled: "#3B5998",
   },
 
   dark: {
-    text: "#f0f0fc",
-    tint: "#818cf8",
+    text: "#e8edf5",
+    tint: "#6B9AD4",
 
-    background: "#0d0d1a",
-    foreground: "#f0f0fc",
+    background: "#070d18",
+    foreground: "#e8edf5",
 
-    card: "#1a1a2e",
-    cardForeground: "#f0f0fc",
+    card: "#0f1c2e",
+    cardForeground: "#e8edf5",
 
-    primary: "#818cf8",
+    primary: "#4A7FC2",
     primaryForeground: "#ffffff",
 
-    secondary: "#312e81",
-    secondaryForeground: "#c7d2fe",
+    secondary: "#112040",
+    secondaryForeground: "#a8c0de",
 
-    muted: "#1e1e30",
-    mutedForeground: "#7b78a0",
+    muted: "#101d30",
+    mutedForeground: "#6b82a0",
 
-    accent: "#1e1e38",
-    accentForeground: "#c7d2fe",
+    accent: "#132540",
+    accentForeground: "#a8c0de",
 
     destructive: "#f87171",
     destructiveForeground: "#ffffff",
@@ -73,8 +73,8 @@ const colors = {
     warning: "#fbbf24",
     warningForeground: "#000000",
 
-    border: "#2a2a42",
-    input: "#2a2a42",
+    border: "#1c2f48",
+    input: "#1c2f48",
 
     priorityHigh: "#f87171",
     priorityMedium: "#fbbf24",
@@ -82,7 +82,7 @@ const colors = {
 
     calendarBusy: "#f87171",
     calendarFree: "#4ade80",
-    taskScheduled: "#818cf8",
+    taskScheduled: "#6B9AD4",
   },
 
   radius: 12,
