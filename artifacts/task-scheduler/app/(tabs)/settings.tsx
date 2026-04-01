@@ -1,4 +1,5 @@
-import { Calendar, RefreshCw, Link2Off, Link, List, Clock, Zap } from "lucide-react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Calendar, RefreshCw, Link2Off, Link, List, Clock, Zap, LogOut } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
@@ -13,6 +14,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useRouter } from "expo-router";
+
+import { SKIP_AUTH_KEY } from "@/app/index";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -29,9 +33,29 @@ const THEME_OPTIONS: { key: ThemeMode; label: string; desc: string }[] = [
 export default function SettingsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { isConnected, events, isLoading, connect, disconnect, refreshEvents } = useCalendar();
   const { themeMode, setThemeMode } = useTheme();
   const [isConnecting, setIsConnecting] = useState(false);
+
+  const handleSignOut = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Alert.alert(
+      "Sign Out",
+      "This will return you to the welcome screen. Your tasks will remain saved.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Sign Out",
+          style: "destructive",
+          onPress: async () => {
+            await AsyncStorage.removeItem(SKIP_AUTH_KEY);
+            router.replace("/");
+          },
+        },
+      ]
+    );
+  };
 
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
 
@@ -214,6 +238,27 @@ export default function SettingsScreen() {
                 </View>
               </View>
             ))}
+          </View>
+        </Animated.View>
+
+        {/* ACCOUNT */}
+        <Animated.View entering={FadeInDown.delay(250).duration(400)}>
+          <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>ACCOUNT</Text>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <TouchableOpacity
+              onPress={handleSignOut}
+              style={[styles.howRow, { borderBottomWidth: 0 }]}
+            >
+              <View style={[styles.howIcon, { backgroundColor: "#FEE2E2" }]}>
+                <LogOut size={16} color="#EF4444" />
+              </View>
+              <View style={styles.howText}>
+                <Text style={[styles.howTitle, { color: "#EF4444" }]}>Sign Out</Text>
+                <Text style={[styles.howDesc, { color: colors.mutedForeground }]}>
+                  Return to the welcome screen
+                </Text>
+              </View>
+            </TouchableOpacity>
           </View>
         </Animated.View>
       </ScrollView>
