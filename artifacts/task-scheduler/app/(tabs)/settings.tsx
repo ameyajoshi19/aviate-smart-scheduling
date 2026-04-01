@@ -49,7 +49,10 @@ export default function SettingsScreen() {
           text: "Sign Out",
           style: "destructive",
           onPress: async () => {
-            await AsyncStorage.removeItem(SKIP_AUTH_KEY);
+            try {
+              await AsyncStorage.removeItem(SKIP_AUTH_KEY);
+            } catch {
+            }
             router.replace("/");
           },
         },

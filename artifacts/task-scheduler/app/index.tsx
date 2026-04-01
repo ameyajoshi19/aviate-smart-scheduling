@@ -46,7 +46,10 @@ export default function StartupScreen() {
   }, []);
 
   const handleContinueWithout = async () => {
-    await AsyncStorage.setItem(SKIP_AUTH_KEY, "1");
+    try {
+      await AsyncStorage.setItem(SKIP_AUTH_KEY, "1");
+    } catch {
+    }
     router.replace("/(tabs)");
   };
 
